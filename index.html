@@ -6,24 +6,49 @@
     <title>Terminal</title>
     <style>
         body {
-            background-color: #272626; /* Grey background */
+            background-color: #272626;
             margin: 0;
             padding: 0;
-            height: 100vh;
+            height: 50vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Orbitron', sans-serif;;
-        }
-        
-        .center-text {
-            font-size: 100px;
+            font-family: 'Orbitron', sans-serif;
             color: rgb(185, 183, 183);
+            flex-direction: column;
+        }
+
+        .center-text {
+            font-size: 140px;
             text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .links {
+            display: flex;            
+            gap: 100px;
+            font-size: 28px;
+        }
+
+        .links a {
+            color: rgb(185, 183, 183);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.3s;
+        }
+
+        .links a:hover {
+            border-color: rgb(185, 183, 183);
         }
     </style>
 </head>
 <body>
     <div class="center-text">Prem Malik</div>
+    <div class="links">
+        <a href="https://www.linkedin.com/in/prem-malik-170006267" target="_blank">LinkedIn</a>
+        <a href="#" target="_self">CV</a> <!-- make it _blank after uploading CV -->
+        <a href="https://github.com/Premmalik" target="_blank">GitHub</a>
+        
+    </div>
 </body>
 </html>
