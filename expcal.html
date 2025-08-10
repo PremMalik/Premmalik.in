@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Expense splitter</title>
+  <meta name="description" content="Mobile-first, accessible expense splitter — refactored for maintainability and performance." />
+  <style>
+    :root{
+      --primary:#2ea86e; --primary-dark:#238f58; --bg:#f6fbf7; --card:#fff; --muted:#7b8c80;
+      --pill:#f0fbf3; --radius:12px; --shadow:0 6px 18px rgba(0,0,0,0.06); --touch:48px; --gap:12px;
+      --danger:#c95246; --text:#173127;
+      --max-width:760px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; font-size:16px;
+    }
+
+    /* Layout utilities */
+    .container{max-width:var(--max-width); margin:0 auto; padding:14px;}
+    .flex{display:flex} .flex-col{display:flex;flex-direction:column} .gap{gap:var(--gap)}
+    .flex-between{display:flex;justify-content:space-between;align-items:center}
+
+    /* Header */
+    header.top{
+      background:var(--primary); color:white; padding:14px; display:flex; gap:12px; align-items:flex-start;
+      border-bottom-left-radius:18px; border-bottom-right-radius:18px;
+    }
+    .title-area{flex:1; min-width:0}
+    #groupName{font-size:1.125rem; font-weight:700; margin:0; padding:0; outline:none; border:none; background:transparent; color:#fff; line-height:1.1;}
+    #groupName[contenteditable]:empty:before{content:attr(data-placeholder); color:rgba(255,255,255,0.95); font-weight:700}
+    #groupName:focus{outline:2px solid rgba(255,255,255,0.12); border-radius:6px}
+
+    .members-row{margin-top:10px; display:flex; gap:8px; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:6px}
+    .member-pill{background:var(--pill); color:var(--primary-dark); padding:6px 10px; border-radius:999px; font-size:.875rem; cursor:pointer; border:1px solid rgba(0,0,0,0.04); white-space:nowrap; flex:0 0 auto}
+
+    .btn{display:inline-flex;align-items:center;justify-content:center;border-radius:10px;padding:8px 12px;border:none;cursor:pointer}
+    .btn-icon{height:40px;width:40px;border-radius:10px;background:rgba(255,255,255,0.12);color:white}
+    .btn-primary{background:var(--primary);color:white}
+    .btn-danger{background:var(--danger);color:white}
+    .link-muted{color:var(--muted);font-size:.875rem;text-decoration:none}
+    
+    main{padding:14px; max-width:var(--max-width); margin:0 auto; padding-bottom:120px}
+    .add-box{border:2px dashed rgba(0,0,0,0.05);background:transparent;padding:16px;border-radius:12px;text-align:center;margin:12px 0;cursor:pointer}
+    
+
+
+    .card{background:var(--card); border-radius:var(--radius); padding:12px; margin:12px 0; box-shadow:var(--shadow)}
+    .expense-card{display:flex;flex-direction:column}
+    .expense-top{display:flex;justify-content:space-between;align-items:center}
+    .expense-title{font-weight:700;font-size:1rem;margin:0}
+    .expense-meta{color:var(--muted);font-size:.875rem}
+    .small-pills{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+    .small-pills .pill{background:#fff;border:1px solid #eee;padding:6px 8px;border-radius:999px;font-size:.75rem;color:#3a6a52}
+
+    .settle-list{background:var(--card); padding:10px; border-radius:10px; margin-top:12px; box-shadow:var(--shadow)}
+
+    /* modal */
+    .modal{position:fixed;inset:0;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,0.35);z-index:60}
+    .modal.active{display:flex}
+    .modal-panel{width:100%;background:var(--card);border-top-left-radius:14px;border-top-right-radius:14px;padding:16px;box-shadow:var(--shadow);max-height:92vh;overflow:auto}
+    .modal-panel.desktop{width:94%;max-width:560px;border-radius:14px;align-self:center}
+
+    label{display:block;font-size:.875rem;color:#556c5d;margin-top:12px;margin-bottom:6px}
+    input[type="text"], input[type="number"], select, textarea{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #eee;font-size:1rem;background:#fff}
+    .price-row{display:flex;gap:8px;align-items:center}
+    .price-row .cur{background:#f7f7f7;padding:11px 12px;border-radius:8px;border:1px solid #eee;color:#444}
+
+    .grid-checkboxes{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+    .chk{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1px solid #efece8;cursor:pointer;user-select:none;background:#fff}
+    .chk input{display:none}
+    .chk .name{font-weight:600;color:#2b6a48}
+    .chk.checked{background:var(--primary);color:white;border:1px solid rgba(0,0,0,0.03)}
+
+    .save-btn{background:var(--primary);color:white;border:none;padding:14px;width:100%;border-radius:10px;margin-top:14px;font-weight:700;font-size:1rem}
+    .back-btn{background:#f2f2f2;border:none;padding:12px;width:100%;border-radius:10px;margin-top:8px}
+
+    /* responsive */
+    @media (max-width:520px){.grid-checkboxes{grid-template-columns:repeat(1,1fr)}.member-pill{padding:10px 14px;font-size:1rem}.save-btn{padding:16px;font-size:1.0625rem}.modal{align-items:flex-end}}
+    @media (min-width:760px){.modal{align-items:center}.modal-panel{border-radius:14px;max-width:640px}}
+
+    /* focus states */
+    button:focus, .member-pill:focus, .chk:focus{outline:3px solid rgba(46,168,110,0.18);outline-offset:2px}
+
+    /* utilities used by JS to hide/show */
+    .hidden{display:none !important}
+    .app-footer {
+    background-color: #28a745; /* green */
+    color: white;
+    text-align: center;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+
+  </style>
+</head>
+<body>
+
+<header class="top" role="banner">
+  <div class="title-area">
+    <div id="groupName" contenteditable="true" data-placeholder="Group name" aria-label="Group name" role="textbox" aria-multiline="false"></div>
+    <div class="members-row" id="membersRow" aria-live="polite" aria-atomic="true"></div>
+  </div>
+  <button id="openEdit" class="btn btn-icon" aria-label="Edit group">✎</button>
+</header>
+
+<main>
+  <div class="container">
+    <div id="openAdd" class="add-box" role="button" tabindex="0" aria-label="Add a payment">
+      <h3>Add a payment</h3>
+    </div>
+
+    <a href="#" id="downloadCsv" class="link-muted">Download Payments in CSV</a>
+
+    <section id="expensesContainer" aria-live="polite"></section>
+
+    <aside class="settle-list" aria-live="polite">
+      <div class="flex-between">
+        <strong style="color:#2f6b4f">How to Settle Debts</strong>
+      </div>
+      <div id="owesLines" style="margin-top:8px"></div>
+    </aside>
+  </div>
+  
+
+</main>
+<footer class="app-footer">
+  © 2025 premmalik.in
+  </footer>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+  <div class="modal-panel" role="document">
+    <h3 id="editModalTitle">Edit group</h3>
+    <label for="editGroupName">Group name</label>
+    <input id="editGroupName" type="text" placeholder="Group name">
+
+    <label>Add member</label>
+    <div style="display:flex;gap:8px">
+      <input id="newMember" type="text" placeholder="Member name">
+      <button id="addMemberBtn" class="btn btn-primary" style="width:auto;padding:10px 12px" aria-label="Add member">Add</button>
+    </div>
+
+    <div style="margin-top:12px">
+      <strong style="font-size:13px;color:#556c5d">Members</strong>
+      <div id="editMembersList" style="margin-top:8px"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button id="closeEditBtn" class="back-btn">Close</button>
+      <button id="openClearBtn" class="btn btn-danger">Clear cache</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Expense Modal -->
+<div id="addModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+  <div class="modal-panel" role="document">
+    <h3 id="addModalTitle" style="color:var(--primary-dark)">Add payment</h3>
+
+    <label for="payerSel">Payer</label>
+    <select id="payerSel" aria-label="Payer"></select>
+
+    <label for="descIn">Payment of...</label>
+    <input id="descIn" type="text" placeholder="eg. flight ticket">
+
+    <label for="amountIn">Price</label>
+    <div class="price-row">
+      <div class="cur">Rs</div>
+      <input id="amountIn" type="number" placeholder="0.00" min="0" step="0.01">
+    </div>
+
+    <label style="margin-top:12px">Payment for...</label>
+    <div class="grid-checkboxes" id="participantsGrid" aria-label="Select participants"></div>
+
+    <button id="saveExpenseBtn" class="save-btn">Save</button>
+    <button id="cancelAddBtn" class="back-btn">Back</button>
+  </div>
+</div>
+
+<!-- Clear Modal -->
+<div id="clearModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="clearModalTitle">
+  <div class="modal-panel" role="document">
+    <h3 id="clearModalTitle">Type <code>clear</code> to clear all data</h3>
+    <input id="clearInput" type="text" placeholder="type clear">
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button id="cancelClearBtn" class="back-btn">Cancel</button>
+      <button id="confirmClearBtn" class="save-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ======= Config =======
+  const STORAGE_KEY = 'splitLocal_refactor_v1';
+  const DAY_FORMAT = { year:'numeric', month:'short', day:'numeric' };
+
+  // ======= State =======
+  const state = { groupName: 'Group name', members: ['You'], expenses: [] };
+
+  // ======= DOM refs =======
+  const refs = {
+    groupNameEl: document.getElementById('groupName'),
+    editGroupName: document.getElementById('editGroupName'),
+    membersRow: document.getElementById('membersRow'),
+    editMembersList: document.getElementById('editMembersList'),
+    expensesContainer: document.getElementById('expensesContainer'),
+    owesLines: document.getElementById('owesLines'),
+    payerSel: document.getElementById('payerSel'),
+    participantsGrid: document.getElementById('participantsGrid'),
+    addModal: document.getElementById('addModal'),
+    editModal: document.getElementById('editModal'),
+    clearModal: document.getElementById('clearModal'),
+  };
+
+  // ======= Utilities =======
+  const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
+  const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+  const escapeHTML = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // debounce for storage writes
+  function debounce(fn, wait=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,a), wait); }; }
+  const saveDebounced = debounce(() => { try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ console.warn('save failed', e); } }, 250);
+
+  // persistent load
+  function loadData(){ try{ const s = localStorage.getItem(STORAGE_KEY); if(s) Object.assign(state, JSON.parse(s)); }catch(e){ console.warn('load failed', e); } }
+  loadData();
+
+  // save immediately
+  function saveNow(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ console.warn('save failed', e); } }
+
+  // ======= Modal helpers (focus trap & accessibility) =======
+  function openModal(el){ el.classList.add('active'); document.body.style.overflow='hidden'; trapFocus(el); }
+  function closeModal(el){ el.classList.remove('active'); document.body.style.overflow='auto'; }
+
+  function trapFocus(modal){
+    const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if(!focusable.length) return;
+    const first = focusable[0], last = focusable[focusable.length-1];
+    function keyHandler(e){ if(e.key === 'Escape'){ closeModal(modal); modal.removeEventListener('keydown', keyHandler); }
+      if(e.key === 'Tab'){
+        if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+        else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+      }
+    }
+    modal.addEventListener('keydown', keyHandler);
+    setTimeout(()=> first.focus(), 10);
+  }
+
+  // ======= Renderers =======
+  function renderHeader(){
+    refs.groupNameEl.innerText = state.groupName || '';
+    refs.editGroupName.value = state.groupName || '';
+
+    refs.membersRow.innerHTML = '';
+    state.members.forEach(m => {
+      const b = document.createElement('button');
+      b.className = 'member-pill';
+      b.type = 'button';
+      b.textContent = m;
+      b.title = `Jump to ${m}`;
+      b.addEventListener('click', () => {
+        // scroll to first expense mentioning member
+        const el = Array.from(document.querySelectorAll('.expense-card')).find(card => card.innerText.includes(m));
+        if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+      });
+      refs.membersRow.appendChild(b);
+    });
+  }
+
+  function renderEditMembers(){
+    refs.editMembersList.innerHTML = '';
+    state.members.forEach(m => {
+      const row = document.createElement('div');
+      row.style.display = 'flex'; row.style.gap = '8px'; row.style.alignItems = 'center'; row.style.marginBottom = '8px';
+      const nameBox = document.createElement('div'); nameBox.style.padding='8px 12px'; nameBox.style.borderRadius='8px'; nameBox.style.background='#fff'; nameBox.style.border='1px solid #eee'; nameBox.style.fontWeight='600'; nameBox.textContent = m;
+      const rem = document.createElement('button'); rem.className='btn'; rem.type='button'; rem.textContent='remove'; rem.addEventListener('click', ()=> removeMember(m));
+      row.appendChild(nameBox); row.appendChild(rem);
+      refs.editMembersList.appendChild(row);
+    });
+  }
+
+  function createExpenseCard(exp, idx){
+    const card = document.createElement('article'); card.className = 'card expense-card';
+    card.dataset.index = idx;
+
+    const top = document.createElement('div'); top.className='expense-top';
+    const left = document.createElement('div');
+    const title = document.createElement('div'); title.className='expense-title'; title.textContent = exp.desc || '—';
+    const meta = document.createElement('div'); meta.className='expense-meta'; meta.textContent = `${exp.payer} paid • ${exp.date || ''}`;
+    left.appendChild(title); left.appendChild(meta);
+
+    const right = document.createElement('div'); right.style.textAlign='right';
+    const amt = document.createElement('div'); amt.style.fontWeight='800'; amt.textContent = `Rs${Number(exp.amount).toFixed(2)}`;
+    const actions = document.createElement('div'); actions.style.marginTop='8px'; actions.style.display='flex'; actions.style.gap='4px'; actions.style.justifyContent='flex-end';
+    const editBtn = document.createElement('button'); editBtn.className='btn'; editBtn.type='button'; editBtn.title='Edit expense'; editBtn.textContent='✎'; editBtn.addEventListener('click', ()=> editExpense(idx));
+    const delBtn = document.createElement('button'); delBtn.className='btn'; delBtn.type='button'; delBtn.title='Delete expense'; delBtn.textContent='🗑'; delBtn.addEventListener('click', ()=> deleteExpense(idx));
+    actions.appendChild(editBtn); actions.appendChild(delBtn);
+
+    right.appendChild(amt); right.appendChild(actions);
+    top.appendChild(left); top.appendChild(right);
+
+    const pills = document.createElement('div'); pills.className='small-pills';
+    exp.participants.forEach(p => { const s = document.createElement('span'); s.className='pill'; s.textContent = p; pills.appendChild(s); });
+
+    card.appendChild(top); card.appendChild(pills);
+    return card;
+  }
+
+  function renderExpenses(){
+    refs.expensesContainer.innerHTML = '';
+    if(!state.expenses.length){
+      const message = document.createElement('div'); message.style.color = 'var(--muted)'; message.style.padding='12px'; message.textContent = 'No payments yet'; refs.expensesContainer.appendChild(message); return;
+    }
+    state.expenses.forEach((exp, idx) => {
+      refs.expensesContainer.appendChild(createExpenseCard(exp, idx));
+    });
+  }
+
+  function renderExpenseForm(){
+    // payer select
+    refs.payerSel.innerHTML = '';
+    state.members.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; refs.payerSel.appendChild(o); });
+
+    // participants grid
+    refs.participantsGrid.innerHTML = '';
+    state.members.forEach(m => {
+  const label = document.createElement('label');
+  label.className = 'chk';
+  label.tabIndex = 0;
+  label.dataset.name = m;
+
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.value = m;
+  cb.checked = true; // default checked for NEW expense
+
+  const span = document.createElement('span');
+  span.className = 'name';
+  span.textContent = m;
+
+  cb.addEventListener('change', () => {
+    label.classList.toggle('checked', cb.checked);
+  });
+
+  label.appendChild(cb);
+  label.appendChild(span);
+  label.classList.toggle('checked', cb.checked);
+
+  refs.participantsGrid.appendChild(label);
+});
+
+  }
+
+  function renderSettlements(){
+    const settles = computeSettlements();
+    refs.owesLines.innerHTML = '';
+    if(!settles.length){ const d = document.createElement('div'); d.style.color='var(--muted)'; d.style.padding='8px 0'; d.textContent = 'All settled!'; refs.owesLines.appendChild(d); return; }
+    settles.forEach(s => {
+      const div = document.createElement('div'); div.style.padding='8px 0'; div.innerHTML = `${escapeHTML(s.from)} → ${escapeHTML(s.to)} <strong>Rs${s.amount.toFixed(2)}</strong>`; refs.owesLines.appendChild(div);
+    });
+  }
+
+  // ======= Computation =======
+  function computeBalances(){
+    const bal = {}; state.members.forEach(m => bal[m] = 0);
+    state.expenses.forEach(e => {
+      const amt = Number(e.amount) || 0; const n = e.participants.length || 1; const share = amt / n;
+      e.participants.forEach(p => { if(!bal[p]) bal[p]=0; bal[p] -= share; });
+      if(!bal[e.payer]) bal[e.payer]=0; bal[e.payer] += amt;
+    });
+    Object.keys(bal).forEach(k=> bal[k] = round2(bal[k]));
+    return bal;
+  }
+
+  function computeSettlements(){
+    const bal = computeBalances(); const creditors = [], debtors = [];
+    Object.keys(bal).forEach(k => { if(bal[k] > 0.005) creditors.push({name:k, amt: bal[k]}); else if(bal[k] < -0.005) debtors.push({name:k, amt:-bal[k]}); });
+    creditors.sort((a,b)=>b.amt-a.amt); debtors.sort((a,b)=>b.amt-a.amt);
+    const res = [];
+    while(creditors.length && debtors.length){ const c = creditors[0], d = debtors[0]; const settle = Math.min(c.amt, d.amt); res.push({from:d.name, to:c.name, amount: round2(settle)}); c.amt = round2(c.amt - settle); d.amt = round2(d.amt - settle); if(c.amt <= 0.005) creditors.shift(); if(d.amt <= 0.005) debtors.shift(); }
+    return res;
+  }
+
+  // ======= Actions =======
+  function addMember(name){ name = String(name).trim(); if(!name) return alert('Enter a member name'); if(state.members.includes(name)) return alert('Duplicate member'); state.members.push(name); saveDebounced(); refreshAll(); }
+
+  function removeMember(name){ if(!confirm('Remove ' + name + ' ?')) return; state.members = state.members.filter(m => m !== name); state.expenses.forEach(e=>{ e.participants = e.participants.filter(p=>p !== name); if(e.payer === name) e.payer = state.members[0] || 'You'; }); saveDebounced(); refreshAll(); }
+
+  function addExpense(obj){ // obj: {payer, desc, amount, participants}
+    const expense = { payer: obj.payer, desc: obj.desc, amount: round2(Number(obj.amount)||0), participants: obj.participants.slice(), date: new Date().toLocaleDateString(undefined, DAY_FORMAT) };
+    // newest first
+    state.expenses.unshift(expense); saveDebounced(); refreshAll();
+  }
+
+  function editExpense(idx){
+    const ex = state.expenses[idx]; if(!ex) return;
+    // set form fields
+    renderExpenseForm();
+    refs.payerSel.value = ex.payer;
+    document.getElementById('descIn').value = ex.desc;
+    document.getElementById('amountIn').value = ex.amount;
+    // set checkboxes
+    document.querySelectorAll('#participantsGrid .chk').forEach(ch => { const cb = ch.querySelector('input'); cb.checked = ex.participants.includes(cb.value); ch.classList.toggle('checked', cb.checked); });
+    // set editing marker
+    editingState.index = idx;
+    openModal(refs.addModal);
+  }
+
+  function deleteExpense(idx){ if(!confirm('Delete this payment?')) return; state.expenses.splice(idx,1); saveDebounced(); refreshAll(); }
+
+  // ======= CSV export =======
+  function exportCsv(){ if(!state.expenses.length){ alert('No payments'); return; }
+    const rows = [['payer','desc','amount','participants','date']]; state.expenses.forEach(ex => rows.push([ex.payer, ex.desc, ex.amount, ex.participants.join('|'), ex.date]));
+    const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = (state.groupName||'payments').replace(/\s+/g,'_') + '.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
+
+  // ======= UI lifecycle =======
+  function refreshAll(){ renderHeader(); renderEditMembers(); renderExpenses(); renderSettlements(); }
+
+  // ======= editing state =======
+  const editingState = { index: -1 };
+
+  // ======= wiring up DOM events =======
+  document.getElementById('addMemberBtn').addEventListener('click', () => {
+  const inputEl = document.getElementById('newMember');
+  const name = inputEl.value.trim();
+  addMember(name);
+  inputEl.value = ''; // always clear after attempt
+});
+
+
+  document.getElementById('openAdd').addEventListener('click', ()=> { editingState.index = -1; renderExpenseForm(); openModal(refs.addModal); });
+  document.getElementById('openAdd').addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); editingState.index = -1; renderExpenseForm(); openModal(refs.addModal); } });
+
+  document.getElementById('openEdit').addEventListener('click', ()=> openModal(refs.editModal));
+  document.getElementById('closeEditBtn').addEventListener('click', ()=> closeModal(refs.editModal));
+
+  document.getElementById('openClearBtn').addEventListener('click', ()=> { closeModal(refs.editModal); openModal(refs.clearModal); });
+  document.getElementById('cancelClearBtn').addEventListener('click', ()=> closeModal(refs.clearModal));
+  document.getElementById('confirmClearBtn').addEventListener('click', ()=> { const v = document.getElementById('clearInput').value.trim().toLowerCase(); if(v === 'clear'){ localStorage.removeItem(STORAGE_KEY); location.reload(); } else alert('Type clear to confirm'); });
+
+  document.getElementById('saveExpenseBtn').addEventListener('click', ()=> {
+    const payer = refs.payerSel.value;
+    const desc = document.getElementById('descIn').value.trim();
+    const amount = Number(document.getElementById('amountIn').value) || 0;
+    const participants = Array.from(document.querySelectorAll('#participantsGrid input:checked')).map(i=>i.value);
+    if(!payer || !desc || !amount || participants.length === 0){ return alert('Fill all fields and select at least one participant'); }
+    const payload = { payer, desc, amount, participants };
+    if(editingState.index >= 0){ // replace
+      const expense = { payer: payload.payer, desc: payload.desc, amount: round2(payload.amount), participants: payload.participants.slice(), date: state.expenses[editingState.index].date };
+      state.expenses[editingState.index] = expense; editingState.index = -1; saveDebounced(); refreshAll(); closeModal(refs.addModal);
+    } else { addExpense(payload); closeModal(refs.addModal); }
+    // reset inputs
+    document.getElementById('descIn').value = '';
+    document.getElementById('amountIn').value = '';
+  });
+
+  document.getElementById('cancelAddBtn').addEventListener('click', ()=> closeModal(refs.addModal));
+
+  document.getElementById('downloadCsv').addEventListener('click', (e)=>{ e.preventDefault(); exportCsv(); });
+
+  // group name editing with debounce save
+  refs.groupNameEl.addEventListener('input', ()=>{
+    const txt = refs.groupNameEl.innerText.replace(/\u200B/g,'').trim(); refs.groupNameEl.innerHTML = txt || ''; state.groupName = txt; saveDebounced(); renderHeader();
+  });
+  refs.editGroupName.addEventListener('input', ()=>{ state.groupName = refs.editGroupName.value || ''; saveDebounced(); renderHeader(); });
+
+  // keyboard global: close modals on Escape
+  document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape'){ document.querySelectorAll('.modal.active').forEach(m=> closeModal(m)); } });
+
+  // init render
+  refreshAll();
+
+  // expose some for debugging (optional)
+  window.splitLocal = { state, saveNow };
+})();
+</script>
+</body>
+</html>
