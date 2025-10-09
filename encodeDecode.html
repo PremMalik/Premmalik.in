@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Encoder/Decoder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a190a, #001100);
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 255, 0, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 255, 0, 0.05) 0%, transparent 20%);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 2px solid #00ff00;
+            padding: 30px;
+            background-color: rgba(0, 10, 0, 0.85);
+            box-shadow: 
+                0 0 20px rgba(0, 255, 0, 0.3),
+                inset 0 0 15px rgba(0, 255, 0, 0.1);
+            position: relative;
+            z-index: 1;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+        }
+
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(0, 255, 0, 0.03) 50%,
+                rgba(0, 0, 0, 0.1) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 0;
+            animation: scan 8s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        h1 {
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 
+                0 0 10px #00ff00,
+                0 0 20px #00ff00,
+                0 0 30px #00ff00;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            position: relative;
+        }
+
+        h1::after {
+            content: "";
+            display: block;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff00, transparent);
+            margin-top: 10px;
+        }
+
+        .card {
+            background-color: rgba(0, 20, 0, 0.7);
+            border: 1px solid #00aa00;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.1);
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            color: #00ff99;
+        }
+
+        .card-title i {
+            font-size: 1.2rem;
+        }
+
+        textarea, input {
+            background-color: rgba(0, 20, 0, 0.8);
+            border: 1px solid #00aa00;
+            color: #00ff00;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            width: 100%;
+            min-height: 120px;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #00ff99;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(145deg, #002200, #003300);
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            padding: 12px 25px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+            flex: 1;
+            min-width: 120px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background: linear-gradient(145deg, #003300, #00ff00);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        .instructions {
+            background-color: rgba(0, 30, 0, 0.6);
+            border-left: 3px solid #00ff00;
+            padding: 15px;
+            margin: 25px 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #00ff99;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: rgba(0, 20, 0, 0.7);
+            border: 1px solid #00aa00;
+            border-radius: 4px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #00ff00;
+            box-shadow: 0 0 8px #00ff00;
+        }
+
+        .error {
+            color: #ff4d4d;
+            padding: 10px;
+            background-color: rgba(255, 0, 0, 0.1);
+            border-radius: 4px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .success {
+            color: #00ff99;
+            padding: 10px;
+            background-color: rgba(0, 255, 0, 0.1);
+            border-radius: 4px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.9rem;
+            color: #00aa00;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scanline"></div>
+    
+    <div class="container">
+        <h1><i class="fas fa-lock"></i> RETRO ENCODER/DECODER</h1>
+        
+        <div class="instructions">
+            <h3><i class="fas fa-info-circle"></i> How to use:</h3>
+            <ul>
+                <li>Enter your message in the input field</li>
+                <li>Provide a secret seed (any text) for encryption</li>
+                <li>Click "Encode" to encrypt your message</li>
+                <li>Copy the encoded result and share it securely</li>
+                <li>Use the same seed to decode the message</li>
+            </ul>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title"><i class="fas fa-keyboard"></i> Input Message</h2>
+            <div class="input-group">
+                <label for="input">Enter your message:</label>
+                <textarea id="input" placeholder="Type your message here..."></textarea>
+            </div>
+            
+            <div class="input-group">
+                <label for="seed">Secret Seed:</label>
+                <input type="text" id="seed" placeholder="Enter a secret phrase (used for encryption/decryption)">
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button id="encode-btn"><i class="fas fa-lock"></i> Encode Message</button>
+            <button id="decode-btn"><i class="fas fa-unlock"></i> Decode Message</button>
+            <button id="clear-btn"><i class="fas fa-trash-alt"></i> Clear All</button>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title"><i class="fas fa-file-alt"></i> Output Result</h2>
+            <div class="input-group">
+                <label for="output">Result:</label>
+                <textarea id="output" placeholder="Your encoded/decoded message will appear here..." readonly></textarea>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator"></div>
+                <span>Ready to process</span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-shield-alt"></i> Secure Encryption
+            </div>
+        </div>
+        
+        <div id="error" class="error">
+            <i class="fas fa-exclamation-triangle"></i> <span id="error-message">Error message will appear here</span>
+        </div>
+        
+        <div id="success" class="success">
+            <i class="fas fa-check-circle"></i> <span id="success-message">Operation completed successfully</span>
+        </div>
+        
+        <div class="footer">
+            <p>Retro Encoder/Decoder v1.0 | Secure Text Encryption</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const inputElement = document.getElementById('input');
+        const seedElement = document.getElementById('seed');
+        const outputElement = document.getElementById('output');
+        const encodeBtn = document.getElementById('encode-btn');
+        const decodeBtn = document.getElementById('decode-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const errorElement = document.getElementById('error');
+        const successElement = document.getElementById('success');
+        const errorMessage = document.getElementById('error-message');
+        const successMessage = document.getElementById('success-message');
+
+        // Show error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorElement.style.display = 'block';
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successElement.style.display = 'block';
+            setTimeout(() => {
+                successElement.style.display = 'none';
+            }, 3000);
+        }
+
+        // Clear all fields
+        function clearAll() {
+            inputElement.value = '';
+            seedElement.value = '';
+            outputElement.value = '';
+            showSuccess('All fields cleared');
+        }
+
+        // Generate key stream for encryption/decryption
+        async function generateKeyStream(length, seed) {
+            const encoder = new TextEncoder();
+            let keyStream = new Uint8Array(length);
+            let counter = 0;
+            let generated = 0;
+
+            // Initial hash
+            let seedHash = CryptoJS.SHA256(seed).toString(CryptoJS.enc.Hex);
+            let hashBuffer = new Uint8Array(32);
+            for (let i = 0; i < 32; i++) {
+                hashBuffer[i] = parseInt(seedHash.substr(i*2, 2), 16);
+            }
+
+            while (generated < length) {
+                const inputStream = new Uint8Array(36);
+                inputStream.set(hashBuffer, 0);
+                inputStream[32] = (counter >> 24) & 0xFF;
+                inputStream[33] = (counter >> 16) & 0xFF;
+                inputStream[34] = (counter >> 8) & 0xFF;
+                inputStream[35] = counter & 0xFF;
+
+                const currentHash = CryptoJS.SHA256(CryptoJS.lib.WordArray.create(inputStream))
+                    .toString(CryptoJS.enc.Hex);
+                
+                const hashArray = new Uint8Array(32);
+                for (let i = 0; i < 32; i++) {
+                    hashArray[i] = parseInt(currentHash.substr(i*2, 2), 16);
+                }
+
+                const bytesNeeded = Math.min(hashArray.length, length - generated);
+                keyStream.set(hashArray.subarray(0, bytesNeeded), generated);
+                generated += bytesNeeded;
+                counter++;
+                hashBuffer = hashArray;
+            }
+
+            return keyStream;
+        }
+
+        // XOR two byte arrays
+        function xorBytes(a, b) {
+            if (a.length !== b.length) {
+                throw new Error("Byte arrays must be of the same length");
+            }
+            const result = new Uint8Array(a.length);
+            for (let i = 0; i < a.length; i++) {
+                result[i] = a[i] ^ b[i];
+            }
+            return result;
+        }
+
+        // Encode message
+        async function encodeMessage() {
+            try {
+                const message = inputElement.value;
+                const seed = seedElement.value;
+                
+                if (!message) {
+                    showError("Please enter a message to encode");
+                    return;
+                }
+                
+                if (!seed) {
+                    showError("Please enter a secret seed");
+                    return;
+                }
+                
+                const encoder = new TextEncoder();
+                const messageBytes = encoder.encode(message);
+                const keyStream = await generateKeyStream(messageBytes.length, seed);
+                
+                const encodedBytes = xorBytes(messageBytes, keyStream);
+                const encodedString = btoa(String.fromCharCode.apply(null, encodedBytes));
+                
+                outputElement.value = encodedString;
+                showSuccess("Message encoded successfully");
+            } catch (error) {
+                showError(`Encoding error: ${error.message}`);
+            }
+        }
+
+        // Decode message
+        async function decodeMessage() {
+            try {
+                const encodedString = inputElement.value;
+                const seed = seedElement.value;
+                
+                if (!encodedString) {
+                    showError("Please enter an encoded message to decode");
+                    return;
+                }
+                
+                if (!seed) {
+                    showError("Please enter the secret seed used for encoding");
+                    return;
+                }
+                
+                const decodedBytes = Uint8Array.from(atob(encodedString), c => c.charCodeAt(0));
+                const keyStream = await generateKeyStream(decodedBytes.length, seed);
+                
+                const messageBytes = xorBytes(decodedBytes, keyStream);
+                const message = new TextDecoder().decode(messageBytes);
+                
+                outputElement.value = message;
+                showSuccess("Message decoded successfully");
+            } catch (error) {
+                showError(`Decoding error: ${error.message}`);
+            }
+        }
+
+        // Event Listeners
+        encodeBtn.addEventListener('click', encodeMessage);
+        decodeBtn.addEventListener('click', decodeMessage);
+        clearBtn.addEventListener('click', clearAll);
+
+        // Allow Enter key for encoding and Shift+Enter for decoding
+        inputElement.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                encodeMessage();
+            } else if (e.key === 'Enter' && e.shiftKey) {
+                e.preventDefault();
+                decodeMessage();
+            }
+        });
+
+        // Initialize with sample text
+        window.addEventListener('load', () => {
+            inputElement.value = "Welcome to the Retro Encoder/Decoder!\nTry encoding this message using a secret seed.";
+        });
+    </script>
+</body>
+</html>
