@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Live Projects demo view by Prem Malik</title>
+  <style>
+    :root{
+      --bg:#2b2b2b;
+      --panel:#3a3a3a;
+      --text:#eaeaea;
+      --muted:#bdbdbd;
+      --btn:#565656;
+      --btn-hover:#6a6a6a;
+      --btn-active:#7a7a7a;
+      --border:#4a4a4a;
+      --shadow:rgba(0,0,0,.35);
+      --r-lg:14px;
+      --r-sm:10px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+    }
+
+    .wrap{
+      max-width:900px;
+      margin:min(6vh,56px) auto;
+      padding:clamp(16px,4vw,32px);
+    }
+    .card{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:var(--r-lg);
+      box-shadow:0 10px 30px var(--shadow);
+      overflow:hidden;
+    }
+
+    header{
+      padding:clamp(18px,3.5vw,28px);
+      border-bottom:1px solid var(--border);
+    }
+    h1{
+      margin:0 0 6px 0;
+      font-weight:700;
+      letter-spacing:0.2px;
+      font-size:clamp(20px,3.2vw,28px);
+      line-height:1.2;
+    }
+    .sub{
+      margin:0;
+      color:var(--muted);
+      font-size:clamp(13px,2vw,15px);
+    }
+
+    ul.projects{
+      list-style:none;
+      margin:0;
+      padding:0;
+    }
+    li.project{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      padding:clamp(12px,2.5vw,18px) clamp(18px,3vw,24px);
+      border-bottom:1px solid var(--border);
+    }
+    li.project:last-child{border-bottom:none}
+
+    .name{
+      flex:1 1 auto;
+      min-width:0;
+      font-size:clamp(14px,2.3vw,17px);
+      font-weight:500;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .visit{
+      flex:0 0 auto;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      color:var(--text);
+      text-decoration:none;
+      background:var(--btn);
+      border:1px solid var(--border);
+      padding:clamp(8px,1.8vw,10px) clamp(12px,2.5vw,16px);
+      border-radius:var(--r-sm);
+      font-size:clamp(13px,2.1vw,15px);
+      line-height:1;
+      transition: background-color .2s ease, transform .15s ease, box-shadow .2s ease, border-color .2s ease;
+      will-change:transform;
+    }
+    .visit:hover{
+      background:var(--btn-hover);
+      transform:translateY(-1px);
+      box-shadow:0 6px 18px var(--shadow);
+      border-color:#5a5a5a;
+    }
+    .visit:active{
+      transform:translateY(0);
+      background:var(--btn-active);
+    }
+    .visit:focus-visible{
+      outline:2px solid #cfcfcf;
+      outline-offset:2px;
+    }
+    .visit svg{
+      width:16px;height:16px;fill:currentColor
+    }
+
+    footer{
+      padding:16px 22px 22px 22px;
+      color:var(--muted);
+      font-size:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .count{color:var(--muted)}
+
+    @media (max-width:520px){
+      li.project{gap:12px}
+      .visit{padding:10px 12px}
+      .name{font-weight:500}
+    }
+    @media (prefers-reduced-motion:reduce){
+      *{transition:none !important}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <header>
+        <h1>My Live Projects</h1>
+        <p class="sub">Click “Visit” to open a project in a new tab.</p>
+      </header>
+
+      <ul class="projects" id="projectList" aria-live="polite"></ul>
+
+      <footer>
+        <span class="count" id="count"></span>
+        <span class="hint">@premmalik.in</span>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    
+    const projects = [
+      { name: "Encode/Decode your Text ", url: "https://premmalik.in/encodeDecode.html" },
+      { name: "Card Game Memory", url: "https://premmalik.in/cardgamememory.html" },
+      { name: "Github Page", url: "https://github.com/Premmalik" },
+      { name: "Linkedin Profile", url: "https://www.linkedin.com/in/prem-malik-170006267" }
+      
+    ];
+
+    const listEl = document.getElementById("projectList");
+    const countEl = document.getElementById("count");
+
+    function createProjectItem({ name, url }) {
+      const li = document.createElement("li");
+      li.className = "project";
+
+      const title = document.createElement("span");
+      title.className = "name";
+      title.textContent = name;
+
+      const link = document.createElement("a");
+      link.className = "visit";
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.setAttribute("aria-label", `Visit ${name}`);
+
+      const label = document.createElement("span");
+      label.textContent = "Visit";
+
+      link.appendChild(label);
+      link.insertAdjacentHTML("beforeend", `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3z"></path>
+          <path d="M5 5h5V3H3v7h2V5z" opacity="0.4"></path>
+        </svg>
+      `);
+
+      li.appendChild(title);
+      li.appendChild(link);
+      return li;
+    }
+
+    function render() {
+      listEl.innerHTML = "";
+      projects.forEach(p => listEl.appendChild(createProjectItem(p)));
+      countEl.textContent = projects.length
+        ? `${projects.length} project${projects.length === 1 ? "" : "s"}`
+        : "No projects yet";
+    }
+
+    render();
+  </script>
+</body>
+</html>
