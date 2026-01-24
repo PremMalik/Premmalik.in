@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Resizer & Converter by Prem Malik</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* Base styles and reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Eye-Strain Free Grey Palette (Blue-Grey tones) */
+            --bg-body: #b0bec5;         /* Medium Grey for background */
+            --bg-container: #cfd8dc;    /* Lighter Grey for content areas */
+            --bg-input: #eceff1;        /* Very light grey for inputs */
+            --text-primary: #263238;    /* Soft Black/Dark Grey */
+            --text-secondary: #546e7a;  /* Muted Grey */
+            --accent-color: #455a64;    /* Slate Grey for buttons */
+            --accent-hover: #37474f;    /* Darker Slate for hover */
+            --border-color: #90a4ae;    /* Soft border */
+            --success-bg: #c8e6c9;      /* Muted Green */
+            --success-text: #2e7d32;
+            --error-bg: #ffcdd2;        /* Muted Red */
+            --error-text: #c62828;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            width: 100%;
+        }
+
+        /* Header styles */
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 25px;
+            background-color: var(--bg-container);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        header h1 {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Main sections */
+        main {
+            background-color: var(--bg-container);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Upload section */
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .drop-area {
+            border: 3px dashed var(--accent-color);
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            background-color: var(--bg-input);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        .drop-area:hover, .drop-area.drag-over {
+            background-color: #dcedc8; /* Subtle tint on hover */
+            border-color: var(--accent-hover);
+        }
+
+        .drop-content svg {
+            color: var(--accent-color);
+            margin-bottom: 15px;
+        }
+
+        .drop-content p {
+            margin: 5px 0;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .or {
+            font-weight: bold;
+            color: var(--text-secondary);
+            margin: 10px 0;
+        }
+
+        #browseBtn {
+            background-color: var(--accent-color);
+            color: #ffffff; /* White text for contrast on buttons is okay */
+            border: none;
+            padding: 10px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            margin-top: 5px;
+        }
+
+        #browseBtn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .file-info {
+            text-align: center;
+            padding: 12px;
+            background-color: var(--bg-input);
+            border-radius: 6px;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            font-weight: 500;
+        }
+
+        /* Controls section */
+        .controls-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            background-color: var(--bg-input);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .control-group h2 {
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+            font-size: 1.25rem;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            background-color: var(--bg-container); /* Slightly darker input bg */
+            color: var(--text-primary);
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .checkbox-group input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-color);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            text-align: center;
+            width: 100%;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-container);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #b0bec5;
+            border-color: var(--accent-color);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Preview section */
+        .preview-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .image-preview h2 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+        }
+
+        .preview-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #90a4ae; /* Darker grey for image backdrop */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: 
+                linear-gradient(45deg, #cfd8dc 25%, transparent 25%), 
+                linear-gradient(-45deg, #cfd8dc 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #cfd8dc 75%), 
+                linear-gradient(-45deg, transparent 75%, #cfd8dc 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        .preview-container img {
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .placeholder-text {
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 20px;
+            font-weight: 500;
+            background-color: rgba(255,255,255,0.8);
+            border-radius: 4px;
+        }
+
+        .image-info {
+            margin-top: 15px;
+            background-color: var(--bg-input);
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .image-info p {
+            margin: 5px 0;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .image-info span {
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        /* Actions section */
+        .actions-section {
+            text-align: center;
+            padding: 25px;
+            background-color: var(--bg-input);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        #statusMessage {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            min-height: 20px;
+            font-weight: 600;
+            transition: opacity 0.3s;
+        }
+
+        .success {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid #a5d6a7;
+        }
+
+        .error {
+            background-color: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid #ef9a9a;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: auto;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            main { padding: 15px; }
+            .controls-section { grid-template-columns: 1fr; }
+            .preview-section { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Image Resizer & Converter</h1>
+            <p>Resize and convert images directly in your browser</p>
+        </header>
+
+        <main>
+            <section class="upload-section">
+                <div class="drop-area" id="dropArea">
+                    <div class="drop-content">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p>Drag & drop your image here</p>
+                        <p class="or">OR</p>
+                        <button id="browseBtn">Browse Files</button>
+                        <input type="file" id="fileInput" accept="image/jpeg, image/jpg, image/png" style="display: none;">
+                    </div>
+                </div>
+                <div class="file-info" id="fileInfo">
+                    <p>No file selected</p>
+                </div>
+            </section>
+
+            <section class="controls-section">
+                <div class="control-group">
+                    <h2>Resize Image</h2>
+                    <div class="input-group">
+                        <label for="widthInput">Width (px):</label>
+                        <input type="number" id="widthInput" min="1" placeholder="Enter width">
+                    </div>
+                    <div class="input-group">
+                        <label for="heightInput">Height (px):</label>
+                        <input type="number" id="heightInput" min="1" placeholder="Enter height">
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="aspectRatioCheckbox" checked>
+                        <label for="aspectRatioCheckbox">Maintain aspect ratio</label>
+                    </div>
+                    <div class="input-group">
+                        <label for="scaleInput">Scale by percentage:</label>
+                        <input type="number" id="scaleInput" min="1" max="1000" placeholder="Enter percentage (e.g. 50)">
+                    </div>
+                    <button class="btn btn-secondary" id="resizeBtn" disabled>Resize Image</button>
+                </div>
+
+                <div class="control-group">
+                    <h2>Convert Format</h2>
+                    <div class="input-group">
+                        <label for="formatSelect">Target Format:</label>
+                        <select id="formatSelect">
+                            <option value="jpeg">JPEG</option>
+                            <option value="jpg">JPG</option>
+                            <option value="png">PNG</option>
+                            <option value="pdf">PDF</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" id="convertBtn" disabled>Convert Format</button>
+                </div>
+            </section>
+
+            <section class="preview-section">
+                <div class="image-preview">
+                    <h2>Original Image</h2>
+                    <div class="preview-container">
+                        <img id="originalPreview" alt="Original image preview">
+                        <div class="placeholder-text">No image loaded</div>
+                    </div>
+                    <div class="image-info" id="originalInfo">
+                        <p>Size: <span id="originalSize">-</span></p>
+                        <p>Resolution: <span id="originalResolution">-</span></p>
+                    </div>
+                </div>
+
+                <div class="image-preview">
+                    <h2>Processed Image</h2>
+                    <div class="preview-container">
+                        <img id="processedPreview" alt="Processed image preview">
+                        <div class="placeholder-text">No processed image</div>
+                    </div>
+                    <div class="image-info" id="processedInfo">
+                        <p>Size: <span id="processedSize">-</span></p>
+                        <p>Resolution: <span id="processedResolution">-</span></p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="actions-section">
+                <button class="btn btn-primary" id="downloadBtn" disabled>Download Output</button>
+                <div id="statusMessage"></div>
+            </section>
+        </main>
+
+        <footer>
+            <p>All processing happens in your browser. No files are uploaded to any server.</p>
+            <p>© premmalik.in</p>
+        </footer>
+    </div>
+
+    <script>
+        // Global variables
+        let originalImage = null;
+        let processedImage = null;
+        let originalImageData = null;
+        let processedImageData = null;
+        let isPdfResult = false; // Flag to check if current result is PDF
+
+        // DOM Elements
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        const browseBtn = document.getElementById('browseBtn');
+        const widthInput = document.getElementById('widthInput');
+        const heightInput = document.getElementById('heightInput');
+        const aspectRatioCheckbox = document.getElementById('aspectRatioCheckbox');
+        const scaleInput = document.getElementById('scaleInput');
+        const resizeBtn = document.getElementById('resizeBtn');
+        const formatSelect = document.getElementById('formatSelect');
+        const convertBtn = document.getElementById('convertBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const originalPreview = document.getElementById('originalPreview');
+        const processedPreview = document.getElementById('processedPreview');
+        const originalSize = document.getElementById('originalSize');
+        const originalResolution = document.getElementById('originalResolution');
+        const processedSize = document.getElementById('processedSize');
+        const processedResolution = document.getElementById('processedResolution');
+        const statusMessage = document.getElementById('statusMessage');
+        const fileInfo = document.getElementById('fileInfo');
+
+        // Event Listeners
+        browseBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        dropArea.addEventListener('dragover', handleDragOver);
+        dropArea.addEventListener('drop', handleDrop);
+        resizeBtn.addEventListener('click', resizeImage);
+        convertBtn.addEventListener('click', convertFormat);
+        downloadBtn.addEventListener('click', downloadImage);
+
+        // Auto-update height/width when aspect ratio is on
+        widthInput.addEventListener('input', () => {
+            if (aspectRatioCheckbox.checked && originalImage && widthInput.value) {
+                const ratio = originalImage.height / originalImage.width;
+                heightInput.value = Math.round(widthInput.value * ratio);
+            }
+        });
+
+        heightInput.addEventListener('input', () => {
+            if (aspectRatioCheckbox.checked && originalImage && heightInput.value) {
+                const ratio = originalImage.width / originalImage.height;
+                widthInput.value = Math.round(heightInput.value * ratio);
+            }
+        });
+
+        // Initialize drag & drop visuals
+        document.addEventListener('DOMContentLoaded', () => {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => dropArea.classList.add('drag-over'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => dropArea.classList.remove('drag-over'), false);
+            });
+        });
+
+        // Handle file selection
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) processFile(file);
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const file = dt.files[0];
+            if (file && file.type.startsWith('image/')) {
+                processFile(file);
+            } else {
+                showMessage('Please select a valid image file (JPEG, JPG, PNG)', 'error');
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Process selected file
+        function processFile(file) {
+            if (!file.type.match('image.*')) {
+                showMessage('Please select a valid image file (JPEG, JPG, PNG)', 'error');
+                return;
+            }
+
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                showMessage('File size exceeds the 10MB limit', 'error');
+                return;
+            }
+
+            fileInfo.innerHTML = `
+                <p>Selected: ${file.name}</p>
+                <p>Size: ${(file.size / 1024).toFixed(2)} KB</p>
+            `;
+
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    originalImage = new Image();
+                    originalImage.onload = function() {
+                        originalPreview.src = e.target.result;
+                        originalPreview.style.display = 'block';
+                        document.querySelector('#originalPreview + .placeholder-text').style.display = 'none';
+                        
+                        originalSize.textContent = `${(file.size / 1024).toFixed(2)} KB`;
+                        originalResolution.textContent = `${originalImage.width} × ${originalImage.height}px`;
+                        
+                        // Populate default input values
+                        widthInput.value = originalImage.width;
+                        heightInput.value = originalImage.height;
+                        
+                        resizeBtn.disabled = false;
+                        convertBtn.disabled = false;
+                        downloadBtn.disabled = true;
+                        
+                        resetProcessedPreview();
+                        showMessage('Image loaded successfully', 'success');
+                    };
+                    
+                    originalImage.onerror = function() {
+                        showMessage('Failed to load the image. Please check the file.', 'error');
+                    };
+                    
+                    originalImage.src = e.target.result;
+                    
+                } catch (error) {
+                    showMessage('Error processing image: ' + error.message, 'error');
+                }
+            };
+            
+            reader.onerror = function() {
+                showMessage('Error reading file', 'error');
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        // Resize image
+        function resizeImage() {
+            if (!originalImage) {
+                showMessage('Please load an image first', 'error');
+                return;
+            }
+
+            const width = parseInt(widthInput.value);
+            const height = parseInt(heightInput.value);
+            const scale = parseFloat(scaleInput.value);
+            
+            if (scale && (scale <= 0 || isNaN(scale))) {
+                showMessage('Please enter a valid scale percentage', 'error');
+                return;
+            }
+            
+            if (!scale && (width < 1 || height < 1)) {
+                showMessage('Width and height must be positive numbers', 'error');
+                return;
+            }
+
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                let newWidth, newHeight;
+                
+                if (scale && scale > 0) {
+                    newWidth = Math.round(originalImage.width * (scale / 100));
+                    newHeight = Math.round(originalImage.height * (scale / 100));
+                } else if (aspectRatioCheckbox.checked) {
+                    const ratio = originalImage.width / originalImage.height;
+                    if (width > 0) {
+                        newWidth = width;
+                        newHeight = Math.round(width / ratio);
+                    } else {
+                        newHeight = height;
+                        newWidth = Math.round(height * ratio);
+                    }
+                } else {
+                    newWidth = width || originalImage.width;
+                    newHeight = height || originalImage.height;
+                }
+
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+                ctx.drawImage(originalImage, 0, 0, newWidth, newHeight);
+                
+                const dataUrl = canvas.toDataURL('image/jpeg');
+                updateProcessedPreview(dataUrl, newWidth, newHeight);
+                isPdfResult = false;
+                
+                showMessage('Image resized successfully', 'success');
+                
+            } catch (error) {
+                showMessage('Error resizing image: ' + error.message, 'error');
+            }
+        }
+
+        // Convert format
+        function convertFormat() {
+            if (!originalImage) {
+                showMessage('Please load an image first', 'error');
+                return;
+            }
+
+            const targetFormat = formatSelect.value;
+            
+            try {
+                // If PDF, we handle differently
+                if (targetFormat === 'pdf') {
+                    if (!window.jspdf) {
+                        showMessage('PDF Library not loaded. Check internet connection.', 'error');
+                        return;
+                    }
+                    // For PDF, we just signal that the next download will be PDF
+                    // But to show a preview, we show the image as JPEG
+                    isPdfResult = true;
+                    
+                    // Create a visual preview (just the image itself)
+                    const canvas = document.createElement('canvas');
+                    canvas.width = originalImage.width;
+                    canvas.height = originalImage.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(originalImage, 0, 0);
+                    
+                    const previewDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                    
+                    processedPreview.src = previewDataUrl;
+                    processedPreview.style.display = 'block';
+                    document.querySelector('#processedPreview + .placeholder-text').style.display = 'none';
+                    
+                    processedSize.textContent = "PDF Ready";
+                    processedResolution.textContent = `${originalImage.width} × ${originalImage.height}px`;
+                    downloadBtn.disabled = false;
+                    
+                    showMessage('Ready to generate PDF. Click Download.', 'success');
+                    return;
+                }
+
+                // Standard Image Conversion
+                isPdfResult = false;
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = originalImage.width;
+                canvas.height = originalImage.height;
+                ctx.drawImage(originalImage, 0, 0);
+                
+                let dataUrl;
+                switch (targetFormat) {
+                    case 'jpg':
+                    case 'jpeg':
+                        dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                        break;
+                    case 'png':
+                        dataUrl = canvas.toDataURL('image/png');
+                        break;
+                    default:
+                        dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                }
+                
+                updateProcessedPreview(dataUrl, originalImage.width, originalImage.height);
+                showMessage(`Format converted to ${targetFormat.toUpperCase()} successfully`, 'success');
+                
+            } catch (error) {
+                showMessage('Error converting format: ' + error.message, 'error');
+            }
+        }
+
+        function updateProcessedPreview(dataUrl, w, h) {
+            processedPreview.src = dataUrl;
+            processedPreview.style.display = 'block';
+            document.querySelector('#processedPreview + .placeholder-text').style.display = 'none';
+            
+            // Calculate approximate size
+            const head = 'data:image/jpeg;base64,';
+            const size = Math.round((dataUrl.length - head.length) * 3 / 4);
+            
+            processedSize.textContent = `${(size / 1024).toFixed(2)} KB`;
+            processedResolution.textContent = `${w} × ${h}px`;
+            
+            processedImageData = dataUrl;
+            downloadBtn.disabled = false;
+        }
+
+        // Download processed image
+        function downloadImage() {
+            if (isPdfResult) {
+                // Generate and download PDF
+                try {
+                    const { jsPDF } = window.jspdf;
+                    
+                    // Create canvas to get image data
+                    const canvas = document.createElement('canvas');
+                    // Use currently set dimensions or original
+                    const w = parseInt(widthInput.value) || originalImage.width;
+                    const h = parseInt(heightInput.value) || originalImage.height;
+                    
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(originalImage, 0, 0, w, h);
+                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+
+                    // Create PDF matching image orientation
+                    const orientation = w > h ? 'l' : 'p';
+                    const pdf = new jsPDF({
+                        orientation: orientation,
+                        unit: 'px',
+                        format: [w, h] // Custom format matching image size
+                    });
+
+                    pdf.addImage(imgData, 'JPEG', 0, 0, w, h);
+                    
+                    const originalName = fileInput.files[0]?.name || 'image';
+                    const nameWithoutExt = originalName.split('.').slice(0, -1).join('.');
+                    pdf.save(`${nameWithoutExt}.pdf`);
+                    
+                    showMessage('PDF Downloaded!', 'success');
+                } catch (e) {
+                    showMessage('PDF Generation Failed: ' + e.message, 'error');
+                }
+                return;
+            }
+
+            if (!processedImageData) {
+                showMessage('No processed image available', 'error');
+                return;
+            }
+
+            try {
+                const link = document.createElement('a');
+                link.href = processedImageData;
+                
+                const originalName = fileInput.files[0]?.name || 'image';
+                const nameWithoutExt = originalName.split('.').slice(0, -1).join('.');
+                const extension = formatSelect.value === 'pdf' ? 'jpg' : (formatSelect.value || 'jpg'); // Fallback if stuck
+                
+                link.download = `${nameWithoutExt}_processed.${extension}`;
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showMessage('Download started', 'success');
+            } catch (error) {
+                showMessage('Error downloading image: ' + error.message, 'error');
+            }
+        }
+
+        function resetProcessedPreview() {
+            processedPreview.style.display = 'none';
+            document.querySelector('#processedPreview + .placeholder-text').style.display = 'block';
+            processedSize.textContent = '-';
+            processedResolution.textContent = '-';
+            downloadBtn.disabled = true;
+            processedImageData = null;
+            isPdfResult = false;
+        }
+
+        function showMessage(text, type) {
+            statusMessage.textContent = text;
+            statusMessage.className = type;
+            setTimeout(() => {
+                statusMessage.textContent = '';
+                statusMessage.className = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
