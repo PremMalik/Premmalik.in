@@ -196,7 +196,6 @@
     .btn:hover{ filter: brightness(1.05); }
     .btn svg{ width: 20px; height: 20px; display: block; }
 
-    /* Specific hover colors for LinkedIn + Resume */
     .btn-linkedin:hover{
       background: #0A66C2;
       border-color: #0A66C2;
@@ -228,10 +227,15 @@
       font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       font-weight: 700;
       font-size: 20px;
-      margin-bottom: 16px;
+      margin-bottom: 8px;
+    }
+    .section-sub{
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 24px;
     }
 
-    /* Projects Grid */
+    /* Generic Grid for standard cards */
     .grid{
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -244,12 +248,13 @@
       .grid{ grid-template-columns: 1fr; }
     }
 
+    /* Card Styling */
     .card{
       position: relative;
       background: var(--card-bg);
       border: 1px solid var(--card-stroke);
       border-radius: var(--radius);
-      padding: 20px;
+      padding: 24px;
       box-shadow: var(--shadow-strong);
       overflow: hidden;
     }
@@ -273,6 +278,44 @@
       line-height: 1.55;
     }
 
+    /* Detailed Featured Blocks */
+    .project-block {
+      margin-bottom: 24px;
+      transition: transform .2s ease, border-color .2s ease;
+    }
+    .project-block:hover {
+      border-color: #2a3040;
+      transform: translateY(-2px);
+    }
+    .project-block h3 {
+        font-size: 20px;
+        margin-top: 0;
+    }
+    .project-block strong {
+        color: var(--text);
+    }
+
+    /* Archive Grid */
+    .archive-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .archive-item {
+      padding: 14px;
+      border: 1px solid var(--card-stroke);
+      background: var(--card-bg);
+      border-radius: 8px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px;
+      color: #cbd5e1;
+      transition: border-color 0.2s ease;
+    }
+    .archive-item:hover {
+        border-color: var(--accent-line);
+    }
+
+    /* Chips */
     .chips{
       display: flex;
       gap: 10px;
@@ -297,17 +340,6 @@
       color: #a7f3d0;
     }
 
-    /* Hoverable cards (Featured Projects) */
-    .hoverable{
-      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-    }
-    .hoverable:hover,
-    .hoverable:focus-within{
-      transform: translateY(-4px);
-      box-shadow: 0 16px 40px rgba(0,0,0,0.45);
-      border-color: #2a3040;
-    }
-
     /* Clickable cards (Live Projects) */
     .card-link{
       display: block;
@@ -326,9 +358,10 @@
 
     /* Footer */
     footer{
-      padding: 24px 0 40px;
-      color: var(--muted);
-      font-size: 12px;
+      padding:40px 0;
+      color:var(--muted);
+      font-size:13px;
+      text-align:center;
     }
 
     /* A11y prefers-reduced-motion */
@@ -364,8 +397,7 @@
       <div class="kicker">Backend Developer</div>
 
       <p class="bio">
-        Backend developer focusing on Java &amp; Spring Boot. I enjoy building clean, performant
-        services and backend systems.
+        Focused on building high-performance, reliable systems using Java & Spring Boot. Developing clean, scalable backend and desktop solutions.
       </p>
 
       <div class="cta">
@@ -385,51 +417,73 @@
 
     <section id="projects" class="wrap">
       <h2 class="section-title">Featured Projects</h2>
+      <div class="section-sub">Selected systems demonstrating backend architecture, security engineering and scalable design.</div>
 
-      <div class="grid">
-        <!-- Card 1 -->
-        <article class="card hoverable" tabindex="0">
-          <h3>Flat/Flatmate Listing Web App</h3>
-          <p>JWT-secured service</p>
-          <p>Google map API.</p>
-          <div class="chips">
-            <span class="chip">Java Spring Boot</span>
-            <span class="chip">MongoDB</span>
-            <span class="chip">Google OAuth 2.0</span>
-          </div>
-        </article>
+      <article class="card project-block">
+        <h3>Flat / Flatmate Listing Platform</h3>
+        <p><strong>Problem:</strong> Students and working professionals struggle to find verified flatmates with location clarity and authentication.</p>
+        <p><strong>Solution:</strong> Designed a JWT-secured REST backend using Spring Boot with role-based authentication and Google Maps integration for geo-search filtering.</p>
+        <p><strong>Architecture:</strong> Modular service layer, MongoDB dynamic filtering, OAuth login, stateless authentication.</p>
+        <div class="chips">
+          <span class="chip">Spring Boot</span>
+          <span class="chip">JWT</span>
+          <span class="chip">MongoDB</span>
+          <span class="chip">Google Maps API</span>
+          <span class="chip">OAuth 2.0</span>
+        </div>
+      </article>
 
-        <!-- Card 2 -->
-        <article class="card hoverable" tabindex="0">
-          <h3>Telegram Payment Bot</h3>
-          <p>Generates a unique QR code by </p>
-          <p>Razorpay API.</p>
-          <div class="chips">
-            <span class="chip">Python</span>
-            <span class="chip">AWS Lambda</span>
-            <span class="chip">BotFather</span>
-          </div>
-        </article>
+      
 
-        <!-- Card 3 -->
-        <article class="card hoverable" tabindex="0">
-          <h3>CUDA Image Compressor</h3>
-          <p>BatchProcess to X0.1 output</p>
-          <p>Lossy compression.</p>
-          <div class="chips">
-            <span class="chip">CUDA Tookit</span>
-            <span class="chip">Nvidia GPU</span>
-            <span class="chip">Parallel Processing</span>
+      <article class="card project-block">
+        <h3>GreenBox — Secure File Encryption System</h3>
+        <p><strong>Overview:</strong> A near-production-ready file encryption system built using AES-CTR + HMAC-SHA256 + PBKDF2.</p>
+        <p><strong>Security Model:</strong> Encrypt-then-MAC paradigm. Header contains salt + IV. Metadata & file data encrypted. HMAC appended for integrity verification.</p>
+        <p><strong>Goal:</strong> Windows-grade personal encryption tool moving beyond toy crypto (XOR) to industry standards.</p>
+        <div class="chips">
+          <span class="chip">AES-CTR</span>
+          <span class="chip">HMAC-SHA256</span>
+          <span class="chip">PBKDF2</span>
+          <span class="chip">System Programming</span>
+        </div>
+      </article>
+
+      <article class="card project-block">
+        <h3>Group Media Sharing System ->(Coming Soon)</h3>
+        <p><strong>Concept:</strong> A scalable shared media platform where group members upload photos/videos via a unique link.</p>
+        <p><strong>Core Logic:</strong> ML-based media scanning, face recognition tagging, and selective bulk download by identity detection.</p>
+        <p><strong>Engineering Highlights:</strong> Server-side processing pipeline, metadata indexing, device-level download tracking, optimized for large (100GB+) media collections.</p>
+        <div class="chips">
+          <span class="chip">Spring Boot</span>
+          <span class="chip">ML Integration</span>
+          <span class="chip">Face Recognition</span>
+          <span class="chip">Large File Handling</span>
+        </div>
+      </article>
+      
+      <div style="margin-top: 48px; margin-bottom: 48px;">
+          <h2 class="section-title">Engineering Archive</h2>
+          <div class="section-sub">Desktop tools, experimental systems and backend projects built over time.</div>
+          
+          <div class="archive-grid">
+              <div class="archive-item">JavaFX Notepad</div>
+              <div class="archive-item">JavaFX Music Player</div>
+              <div class="archive-item">CPU Image Compressor</div>
+              <div class="archive-item">GPU Image Compressor</div>
+              <div class="archive-item">100GB+ File Sharing </div>
+              <div class="archive-item">Disk Cleaner Utility</div>
+              <div class="archive-item">GreenBox Encryption Tool</div>
+              <div class="archive-item">Telegram Razorpay Bot</div>
+              <div class="archive-item">Flatmate Backend System</div>
           </div>
-        </article>
       </div>
 
-      <!-- Live Projects (clickable) -->
-      <section id="live-projects" style="margin-top: 28px;">
-        <h3 class="section-title" style="margin-top: 8px;">Live Projects</h3>
+      <div id="live-projects">
+        <h2 class="section-title">Public Mini Programs</h2>
+        <div class="section-sub">Lightweight browser tools built for real-world usage.</div>
+        
         <div class="grid">
-          <!-- Live Card 1 -->
-          <a class="card card-link" href="https://premmalik.in/Tools/expcal.html" target="_blank" rel="noopener" aria-label="Open Live: URL Shortener">
+          <a class="card card-link" href="https://premmalik.in/Tools/expcal.html" target="_blank" rel="noopener" aria-label="Open Live: Expense Calculator">
             <h3>Expense Calculator (Live)</h3>
             <p>Split group expenses instantly with local storage using browser cache only.</p>
             <div class="chips">
@@ -439,8 +493,7 @@
             </div>
           </a>
 
-          <!-- Live Card 2 -->
-          <a class="card card-link" href="https://premmalik.in/Tools/imgEditer.html" target="_blank" rel="noopener" aria-label="Open Live: Markdown Notes">
+          <a class="card card-link" href="https://premmalik.in/Tools/imgEditer.html" target="_blank" rel="noopener" aria-label="Open Live: Image Editor">
             <h3>Image Resizing (Live)</h3>
             <p>Offline-ready app to Edit & resize your Images. Works great Submitting only forms.</p>
             <div class="chips">
@@ -450,22 +503,19 @@
             </div>
           </a>
 
-          <!-- Live Card 3 -->
-          <a class="card card-link" href="https://premmalik.in/LiveProjectsList.html" target="_blank" rel="noopener" aria-label="Open Live: Task Manager">
+          <a class="card card-link" href="https://premmalik.in/LiveProjectsList.html" target="_blank" rel="noopener" aria-label="Open Live: Other Projects">
             <h3>Other mini-Projects</h3>
-            <p>Things I make to learn new things. Clean UI and Free to use.</p>
+            <p>Collection of browser-based utilities. Clean UI, fully client-side and free to use.</p>
             <div class="chips">
               <span class="chip live">Live</span>
               <span class="chip">Web Pages</span>
               <span class="chip">Fun to do</span>
             </div>
-          </a>         
-
+          </a>        
         </div>
-      </section>
+      </div>
     </section>
 
-    <!-- Optional placeholder sections so nav works -->
     <section id="skills" class="wrap">
       <h2 class="section-title">Skills</h2>
       <p class="muted">
@@ -485,14 +535,12 @@
 
     <section id="contact" class="wrap">
       <h2 class="section-title">Contact</h2>
-      <p class="muted">Feel free to reach out: <a href="mailto:your.email@example.com" style="color:#e6e6e6">premjat098@gmail.com</a></p>
+      <p class="muted">Feel free to reach out: <a href="mailto:premjat098@gmail.com" style="color:#e6e6e6">premjat098@gmail.com</a></p>
     </section>
   </main>
 
   <footer>
-    <div class="wrap">
-      Portfolio © <span style="font-family:'JetBrains Mono', ui-monospace;">Prem Malik</span>
-    </div>
+    Portfolio © Prem Malik
   </footer>
 
   <script>
@@ -529,7 +577,4 @@
     });
   </script>
 </body>
-
 </html>
-
-
