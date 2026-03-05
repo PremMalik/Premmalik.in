@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Notes → PDF Converter</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-theme">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f7f7f5;--surface:#fff;--surface2:#f0efed;--border:#e0dedd;--text:#1a1a18;--text2:#6b6b68;--accent:#2563eb;--accent-light:#eff6ff;--toolbar-bg:#fff;--editor-bg:#fafaf8;--preview-bg:#fff;--scrollbar:#d0cfcc;--hljs-bg:#f6f8fa;--code-inline:#e8e6e3;--bq-bg:#f7f7f5;--bq-border:#d0cfcc;--th-bg:#f0efed;--tb:#e0dedd;--div-bg:#e0dedd;--badge-bg:#f0efed;--badge-text:#6b6b68;--btn-bg:#f0efed;--btn-hover:#e4e3e0;--btn-text:#1a1a18;--primary:#2563eb;--primary-h:#1d4ed8;--danger:#dc2626;--shadow:0 1px 3px rgba(0,0,0,.08);--radius:6px;--mono:'Consolas','Fira Code','Monaco',monospace;--serif:'Georgia','Times New Roman',serif;--ui:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+[data-theme="dark"]{--bg:#1a1a1a;--surface:#242424;--surface2:#2e2e2e;--border:#3a3a3a;--text:#e8e8e6;--text2:#888886;--accent:#4f8ef7;--accent-light:#1e2a3a;--toolbar-bg:#1e1e1e;--editor-bg:#1e1e1e;--preview-bg:#242424;--scrollbar:#444;--hljs-bg:#2d2d2d;--code-inline:#3a3a3a;--bq-bg:#2a2a2a;--bq-border:#444;--th-bg:#2e2e2e;--tb:#3a3a3a;--div-bg:#333;--badge-bg:#2e2e2e;--badge-text:#888886;--btn-bg:#2e2e2e;--btn-hover:#3a3a3a;--btn-text:#e8e8e6}
+[data-theme="print-white"]{--bg:#dcdcdc;--surface:#fff;--surface2:#f5f5f5;--border:#ccc;--text:#000;--text2:#555;--editor-bg:#fafafa;--preview-bg:#fff;--btn-bg:#f0f0f0;--btn-hover:#e0e0e0;--btn-text:#000}
+html,body{height:100%;font-family:var(--ui);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;overflow:hidden;transition:background .2s,color .2s}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--scrollbar);border-radius:3px}
+#app{display:flex;flex-direction:column;height:100vh}
+#toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding:7px 10px;background:var(--toolbar-bg);border-bottom:1px solid var(--border);box-shadow:var(--shadow);z-index:100;flex-shrink:0}
+.brand{font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:5px;margin-right:4px;white-space:nowrap}
+.brand-icon{width:22px;height:22px;background:var(--accent);border-radius:5px;display:grid;place-items:center;color:#fff;font-size:12px}
+.sep{width:1px;height:20px;background:var(--border);margin:0 2px;flex-shrink:0}
+.grp{display:flex;align-items:center;gap:4px}
+.lbl{font-size:11px;color:var(--text2);white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:5px 9px;background:var(--btn-bg);color:var(--btn-text);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--ui);cursor:pointer;white-space:nowrap;transition:background .13s;line-height:1.4}
+.btn:hover{background:var(--btn-hover)}.btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}.btn.primary:hover{background:var(--primary-h)}.btn.danger{color:var(--danger)}.btn.danger:hover{background:#fef2f2;border-color:#fecaca}
+[data-theme="dark"] .btn.danger:hover{background:#3a1a1a}
+.btn svg{width:13px;height:13px;stroke-width:2;flex-shrink:0}
+select,input[type=text]{padding:4px 7px;background:var(--btn-bg);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:var(--ui);outline:none;transition:border-color .15s;cursor:pointer}
+select:focus,input[type=text]:focus{border-color:var(--accent)}
+input[type=text]::placeholder{color:var(--text2)}
+input[type=range]{-webkit-appearance:none;width:65px;height:3px;background:var(--border);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;background:var(--accent);border-radius:50%}
+.badge{padding:3px 8px;background:var(--badge-bg);color:var(--badge-text);border:1px solid var(--border);border-radius:20px;font-size:11px;white-space:nowrap}
+.tog{display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:var(--text2)}.tog input{width:13px;height:13px;accent-color:var(--accent);cursor:pointer}
+#main{display:flex;flex:1;overflow:hidden}
+#ep{display:flex;flex-direction:column;width:50%;min-width:160px;background:var(--editor-bg);border-right:1px solid var(--border);overflow:hidden;flex-shrink:0}
+.pane-hdr{display:flex;align-items:center;justify-content:space-between;padding:5px 12px;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0}
+.pane-ttl{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+#editor{flex:1;width:100%;padding:20px;background:transparent;color:var(--text);border:none;outline:none;resize:none;font-family:var(--mono);font-size:13px;line-height:1.7;white-space:pre-wrap;word-wrap:break-word;overflow-y:auto;tab-size:2}
+#editor::placeholder{color:var(--text2);opacity:.6}
+#editor.dz{background:var(--accent-light);box-shadow:inset 0 0 0 2px var(--accent)}
+#dv{width:5px;background:var(--div-bg);cursor:col-resize;flex-shrink:0;transition:background .15s;z-index:10}
+#dv:hover,#dv.on{background:var(--accent)}
+#pp{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--preview-bg);min-width:160px}
+#ps{flex:1;overflow-y:auto;padding:36px 56px}
+#pc{max-width:780px;margin:0 auto;font-family:var(--serif);font-size:16px;line-height:1.8;color:var(--text);word-wrap:break-word;overflow-wrap:break-word}
+#pc h1{font-size:2em;font-weight:700;line-height:1.3;margin:0 0 .8em;padding-bottom:.3em;border-bottom:2px solid var(--border);font-family:var(--ui)}
+#pc h2{font-size:1.5em;font-weight:700;margin:1.8em 0 .6em;padding-bottom:.2em;border-bottom:1px solid var(--border);font-family:var(--ui)}
+#pc h3{font-size:1.25em;font-weight:600;margin:1.4em 0 .5em;font-family:var(--ui)}
+#pc h4{font-size:1.1em;font-weight:600;margin:1.2em 0 .4em;font-family:var(--ui)}
+#pc h5,#pc h6{font-size:1em;font-weight:600;margin:1em 0 .3em;font-family:var(--ui)}
+#pc h6{color:var(--text2)}
+#pc p{margin:0 0 1em}
+#pc ul,#pc ol{margin:0 0 1em 1.5em;padding-left:.5em}
+#pc li{margin-bottom:.3em}#pc li>ul,#pc li>ol{margin:.3em 0 .3em 1.2em}
+#pc blockquote{margin:1.2em 0;padding:.8em 1.2em;border-left:3px solid var(--bq-border);background:var(--bq-bg);border-radius:0 4px 4px 0;color:var(--text2);font-style:italic}
+#pc blockquote p{margin:0}
+#pc code{font-family:var(--mono);font-size:.85em;background:var(--code-inline);padding:1px 5px;border-radius:3px}
+#pc pre{margin:1em 0;border-radius:6px;overflow:hidden;background:var(--hljs-bg);border:1px solid var(--border)}
+#pc pre code{display:block;padding:1em 1.2em;background:transparent;font-size:.82em;line-height:1.7;overflow-x:auto}
+#pc table{width:100%;border-collapse:collapse;margin:1em 0;font-size:.9em;table-layout:fixed;overflow-wrap:break-word}
+#pc th{background:var(--th-bg);font-weight:600;text-align:left;padding:8px 12px;border:1px solid var(--tb);font-family:var(--ui)}
+#pc td{padding:7px 12px;border:1px solid var(--tb);vertical-align:top;word-break:break-word}
+#pc tr:nth-child(even){background:var(--surface2)}
+#pc hr{border:none;border-top:1px solid var(--border);margin:2em 0}
+#pc a{color:var(--accent);text-decoration:none}#pc a:hover{text-decoration:underline}
+#pc img{max-width:100%;height:auto;border-radius:4px}
+#lo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#lo.on{display:flex}
+.spin{width:38px;height:38px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.lt{color:#fff;font-size:14px}
+#tc{position:fixed;bottom:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:8px}
+.toast{padding:10px 16px;border-radius:var(--radius);font-size:13px;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.2);animation:ti .25s ease;max-width:300px}
+@keyframes ti{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.toast.success{background:#16a34a}.toast.error{background:#dc2626}.toast.info{background:#2563eb}
+#pdfwrap{display:none;font-family:Georgia,serif;font-size:14pt;line-height:1.8;color:#111;background:#fff}
+#pdfwrap h1{font-size:22pt;font-weight:700;border-bottom:2px solid #ddd;padding-bottom:6pt;margin:0 0 16pt;font-family:sans-serif}
+#pdfwrap h2{font-size:16pt;font-weight:700;border-bottom:1px solid #ddd;padding-bottom:4pt;margin:20pt 0 10pt;font-family:sans-serif}
+#pdfwrap h3{font-size:13pt;font-weight:600;margin:16pt 0 8pt;font-family:sans-serif}
+#pdfwrap h4{font-size:12pt;font-weight:600;margin:12pt 0 6pt;font-family:sans-serif}
+#pdfwrap p{margin:0 0 10pt;orphans:3;widows:3}
+#pdfwrap ul,#pdfwrap ol{margin:0 0 10pt 18pt}
+#pdfwrap li{margin-bottom:3pt}
+#pdfwrap blockquote{border-left:3pt solid #ccc;padding:6pt 12pt;background:#f9f9f9;margin:12pt 0;color:#555;font-style:italic}
+#pdfwrap blockquote p{margin:0}
+#pdfwrap pre{background:#f6f8fa;border:1pt solid #ddd;border-radius:4pt;padding:10pt;margin:10pt 0}
+#pdfwrap pre code{font-family:'Courier New',monospace;font-size:9pt;line-height:1.5;display:block;white-space:pre-wrap;word-break:break-all;background:transparent;padding:0}
+#pdfwrap code{font-family:'Courier New',monospace;font-size:9pt;background:#eee;padding:1pt 4pt;border-radius:2pt}
+#pdfwrap table{width:100%;border-collapse:collapse;margin:10pt 0;font-size:10pt;table-layout:fixed}
+#pdfwrap th{background:#f0f0f0;padding:6pt 10pt;border:1pt solid #ccc;font-weight:600;font-family:sans-serif;text-align:left}
+#pdfwrap td{padding:5pt 10pt;border:1pt solid #ccc;vertical-align:top;word-break:break-word}
+#pdfwrap tr:nth-child(even){background:#fafafa}
+#pdfwrap hr{border:none;border-top:1pt solid #ddd;margin:16pt 0}
+#pdfwrap a{color:#2563eb}#pdfwrap img{max-width:100%;height:auto}
+.pdf-hdr{font-family:sans-serif;font-size:9pt;color:#888;border-bottom:1px solid #ddd;padding-bottom:6pt;margin-bottom:18pt}
+.pdf-ftr{font-family:sans-serif;font-size:9pt;color:#888;border-top:1px solid #ddd;padding-top:6pt;margin-top:18pt;display:flex;justify-content:space-between}
+@media print{
+  #app{display:none!important}
+  #pra{display:block!important;font-family:Georgia,serif;font-size:12pt;line-height:1.7;color:#000;padding:15mm}
+  #pra h1{font-size:20pt;border-bottom:2px solid #ccc;padding-bottom:5pt;margin:0 0 12pt;font-family:sans-serif}
+  #pra h2{font-size:15pt;border-bottom:1px solid #ddd;padding-bottom:3pt;margin:16pt 0 8pt;font-family:sans-serif}
+  #pra h3{font-size:12pt;margin:14pt 0 6pt;font-family:sans-serif}
+  #pra pre code{white-space:pre-wrap;word-break:break-all}
+  #pra table{page-break-inside:avoid;width:100%;border-collapse:collapse}
+  #pra th{background:#eee;padding:5pt 8pt;border:1pt solid #bbb;font-family:sans-serif}
+  #pra td{padding:4pt 8pt;border:1pt solid #bbb}
+  #pra h1,#pra h2,#pra h3{page-break-after:avoid}
+  #pra blockquote{border-left:3pt solid #bbb;padding:6pt 12pt;margin:10pt 0;color:#444;font-style:italic}
+  #pra code{font-family:'Courier New',monospace;font-size:9pt;background:#f0f0f0;padding:1pt 3pt}
+  #pra pre{background:#f6f8fa;border:1pt solid #ddd;padding:8pt;margin:8pt 0}
+}
+@media(max-width:700px){#ps{padding:16px 12px}}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="toolbar">
+  <div class="brand"><div class="brand-icon">📄</div>NotesToPDF</div>
+  <div class="sep"></div>
+  <div class="grp">
+    <span class="lbl">Size</span>
+    <input type="range" id="fss" min="12" max="24" value="16">
+    <span id="fsv" class="lbl">16px</span>
+  </div>
+  <div class="sep"></div>
+  <div class="grp">
+    <select id="theme"><option value="light">☀ Light</option><option value="dark">🌙 Dark</option><option value="print-white">🖨 Print White</option></select>
+  </div>
+  <div class="sep"></div>
+  <div class="grp">
+    <select id="paper"><option value="a4">A4</option><option value="letter">Letter</option></select>
+    <select id="orient"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select>
+    <select id="margin"><option value="10">Narrow</option><option value="15" selected>Normal</option><option value="25">Wide</option></select>
+  </div>
+  <div class="sep"></div>
+  <div class="grp">
+    <input type="text" id="hdr" style="width:112px" placeholder="Custom header…">
+    <input type="text" id="ftr" style="width:112px" placeholder="Custom footer…">
+    <label class="tog"><input type="checkbox" id="pgn" checked><span>Page #</span></label>
+  </div>
+  <div class="sep"></div>
+  <div class="grp">
+    <input type="text" id="fname" style="width:100px" value="my-notes" placeholder="filename">
+  </div>
+  <div class="sep"></div>
+  <div class="grp">
+    <span class="badge" id="wc">0 words</span>
+    <span class="badge" id="pe">~0 pages</span>
+  </div>
+  <div class="sep"></div>
+  <div class="grp">
+    <button class="btn" id="bch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy HTML</button>
+    <button class="btn" id="bpr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print</button>
+    <button class="btn danger" id="bcl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>Clear</button>
+    <button class="btn primary" id="bdl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download PDF</button>
+  </div>
+</div>
+<div id="main">
+  <div id="ep">
+    <div class="pane-hdr">
+      <span class="pane-ttl">✏ Markdown Editor</span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span class="lbl" id="cc">0 chars</span>
+        <button class="btn" id="bte" style="padding:3px 7px;font-size:11px">Hide</button>
+      </div>
+    </div>
+    <textarea id="editor" spellcheck="false" placeholder="Paste LLM output here — full Markdown supported!&#10;&#10;Drag &amp; drop a .md file, or start typing…"></textarea>
+  </div>
+  <div id="dv"></div>
+  <div id="pp">
+    <div class="pane-hdr">
+      <span class="pane-ttl">👁 Live Preview</span>
+      <span id="ls" style="font-size:11px;color:var(--text2)">Auto-save on</span>
+    </div>
+    <div id="ps"><div id="pc"><p style="color:var(--text2);font-family:var(--ui);font-size:14px;text-align:center;padding:80px 20px">Paste or type Markdown on the left to see your preview…</p></div></div>
+  </div>
+</div>
+</div>
+<div id="lo"><div class="spin"></div><div class="lt">Generating PDF…</div></div>
+<div id="tc"></div>
+<div id="pdfwrap"></div>
+<div id="pra" style="display:none"></div>
+<script>
+const E=id=>document.getElementById(id);
+const ed=E('editor'),pc=E('pc'),ps=E('ps');
+const fss=E('fss'),fsv=E('fsv'),thm=E('theme');
+const pap=E('paper'),ori=E('orient'),mar=E('margin');
+const hdr=E('hdr'),ftr=E('ftr'),pgn=E('pgn');
+const fn=E('fname'),wc=E('wc'),pe=E('pe'),cc=E('cc');
+const ls=E('ls'),lo=E('lo'),pdfw=E('pdfwrap'),pra=E('pra');
+const ep=E('ep'),dv=E('dv'),mainEl=E('main');
+
+const rnd=new marked.Renderer();
+rnd.code=(code,lang)=>{
+  const vl=lang&&hljs.getLanguage(lang)?lang:null;
+  const hi=vl?hljs.highlight(code,{language:vl}).value:hljs.highlightAuto(code).value;
+  return`<pre><code class="hljs${lang?' language-'+lang:''}">${hi}</code></pre>`;
+};
+marked.setOptions({renderer:rnd,breaks:true,gfm:true});
+
+let rt=null;
+function render(){
+  const raw=ed.value;
+  if(!raw.trim()){pc.innerHTML='<p style="color:var(--text2);font-family:var(--ui);font-size:14px;text-align:center;padding:80px 20px">Paste or type Markdown on the left…</p>';stats('');return;}
+  pc.innerHTML=DOMPurify.sanitize(marked.parse(raw),{ADD_TAGS:['pre','code','table','thead','tbody','tr','th','td'],ADD_ATTR:['class','id']});
+  stats(raw);autoSave();
+}
+const dRender=()=>{clearTimeout(rt);rt=setTimeout(render,160);};
+
+function stats(t){
+  const w=t.trim()?t.trim().split(/\s+/).length:0;
+  const p=Math.max(1,Math.ceil(w/280));
+  wc.textContent=w.toLocaleString()+' words';
+  pe.textContent='~'+p+' page'+(p!==1?'s':'');
+  cc.textContent=t.length.toLocaleString()+' chars';
+}
+
+const CK='ntpdf-c2',SK='ntpdf-s1';
+function autoSave(){try{localStorage.setItem(CK,ed.value);ls.textContent='Saved '+new Date().toLocaleTimeString();}catch(e){}}
+function saveSettings(){try{localStorage.setItem(SK,JSON.stringify({theme:thm.value,fs:fss.value,paper:pap.value,orient:ori.value,margin:mar.value,fname:fn.value}));}catch(e){}}
+function loadAll(){
+  try{
+    const s=JSON.parse(localStorage.getItem(SK)||'{}');
+    if(s.theme){thm.value=s.theme;applyTheme(s.theme);}
+    if(s.fs){fss.value=s.fs;applyFS(s.fs);}
+    if(s.paper)pap.value=s.paper;
+    if(s.orient)ori.value=s.orient;
+    if(s.margin)mar.value=s.margin;
+    if(s.fname)fn.value=s.fname;
+    const c=localStorage.getItem(CK);
+    if(c){ed.value=c;render();}
+  }catch(e){}
+}
+
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  E('hljs-theme').href=t==='dark'
+    ?'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css'
+    :'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
+  saveSettings();
+}
+function applyFS(v){pc.style.fontSize=v+'px';fsv.textContent=v+'px';saveSettings();}
+thm.onchange=()=>applyTheme(thm.value);
+fss.oninput=()=>applyFS(fss.value);
+
+let isDr=false,drX=0,drW=0;
+dv.addEventListener('mousedown',e=>{isDr=true;drX=e.clientX;drW=ep.offsetWidth;dv.classList.add('on');Object.assign(document.body.style,{cursor:'col-resize',userSelect:'none'});});
+document.addEventListener('mousemove',e=>{if(!isDr)return;ep.style.width=Math.max(160,Math.min(drW+e.clientX-drX,mainEl.offsetWidth-160))+'px';});
+document.addEventListener('mouseup',()=>{if(isDr){isDr=false;dv.classList.remove('on');document.body.style.cursor='';document.body.style.userSelect='';}});
+
+let epV=true;
+E('bte').onclick=()=>{epV=!epV;ep.style.display=epV?'flex':'none';dv.style.display=epV?'block':'none';E('bte').textContent=epV?'Hide':'Show';};
+
+ed.addEventListener('dragover',e=>{e.preventDefault();ed.classList.add('dz');});
+ed.addEventListener('dragleave',()=>ed.classList.remove('dz'));
+ed.addEventListener('drop',e=>{
+  e.preventDefault();ed.classList.remove('dz');
+  const f=e.dataTransfer.files[0];if(!f)return;
+  if(f.name.match(/\.(md|txt|markdown)$/i)||f.type.startsWith('text')){
+    const fr=new FileReader();fr.onload=v=>{ed.value=v.target.result;render();toast('File loaded!','success');};fr.readAsText(f);
+  }else toast('Drop a .md or .txt file','error');
+});
+
+ed.addEventListener('input',dRender);
+ed.addEventListener('paste',()=>setTimeout(dRender,20));
+ed.addEventListener('keydown',e=>{
+  if(e.key==='Tab'){e.preventDefault();const s=ed.selectionStart,n=ed.selectionEnd;ed.value=ed.value.substring(0,s)+'  '+ed.value.substring(n);ed.selectionStart=ed.selectionEnd=s+2;}
+});
+
+let syn=false;
+ed.addEventListener('scroll',()=>{if(syn)return;syn=true;ps.scrollTop=(ed.scrollTop/Math.max(1,ed.scrollHeight-ed.clientHeight))*(ps.scrollHeight-ps.clientHeight);syn=false;});
+ps.addEventListener('scroll',()=>{if(syn)return;syn=true;ed.scrollTop=(ps.scrollTop/Math.max(1,ps.scrollHeight-ps.clientHeight))*(ed.scrollHeight-ed.clientHeight);syn=false;});
+
+document.addEventListener('keydown',e=>{
+  const m=e.ctrlKey||e.metaKey;
+  if(m&&e.key==='s'){e.preventDefault();dlPDF();}
+  if(m&&e.key==='p'){e.preventDefault();doPrint();}
+  if(m&&e.key==='l'){e.preventDefault();clearEd();}
+});
+
+[pap,ori,mar,fn].forEach(el=>{el.onchange=saveSettings;el.oninput=saveSettings;});
+
+function buildHTML(){
+  const raw=ed.value.trim();if(!raw)return null;
+  return DOMPurify.sanitize(marked.parse(raw),{ADD_TAGS:['pre','code','table','thead','tbody','tr','th','td'],ADD_ATTR:['class','id']});
+}
+
+async function dlPDF(){
+  if(!ed.value.trim()){toast('Nothing to export — add content first.','error');return;}
+  const html=buildHTML(),h=hdr.value.trim(),f=ftr.value.trim(),pg=pgn.checked;
+  const fname=(fn.value.trim()||'my-notes').replace(/\.pdf$/i,'')+'.pdf';
+  pdfw.innerHTML=`${h?`<div class="pdf-hdr">${DOMPurify.sanitize(h)}</div>`:''}${html}${(f||pg)?`<div class="pdf-ftr"><span>${DOMPurify.sanitize(f)}</span>${pg?'<span>Page</span>':''}</div>`:''}`;
+  pdfw.style.display='block';
+  const D={a4:[210,297],letter:[215.9,279.4]};
+  const[dw,dh]=D[pap.value]||D.a4;
+  const land=ori.value==='landscape';
+  const[W,H]=land?[dh,dw]:[dw,dh];
+  const opt={margin:parseInt(mar.value)||15,filename:fname,image:{type:'jpeg',quality:.97},html2canvas:{scale:2,useCORS:true,letterRendering:true,logging:false},jsPDF:{unit:'mm',format:[W,H],orientation:land?'landscape':'portrait'},pagebreak:{mode:['avoid-all','css','legacy']}};
+  lo.classList.add('on');
+  try{await html2pdf().set(opt).from(pdfw).save();toast('PDF saved: '+fname,'success');}
+  catch(err){console.error(err);toast('PDF generation failed. See console.','error');}
+  finally{lo.classList.remove('on');pdfw.style.display='none';pdfw.innerHTML='';}
+}
+
+function doPrint(){
+  if(!ed.value.trim()){toast('Nothing to print!','error');return;}
+  const html=buildHTML(),h=hdr.value.trim(),f=ftr.value.trim();
+  pra.innerHTML=`${h?`<div style="font-family:sans-serif;font-size:9pt;color:#888;border-bottom:1px solid #ddd;padding-bottom:6pt;margin-bottom:14pt">${DOMPurify.sanitize(h)}</div>`:''}${html}${f?`<div style="font-family:sans-serif;font-size:9pt;color:#888;border-top:1px solid #ddd;padding-top:6pt;margin-top:14pt">${DOMPurify.sanitize(f)}</div>`:''}`;
+  pra.style.display='block';
+  setTimeout(()=>{window.print();pra.style.display='none';pra.innerHTML='';},120);
+}
+
+function clearEd(){
+  if(!ed.value.trim())return;
+  if(confirm('Clear all content? This cannot be undone.')){
+    ed.value='';render();
+    try{localStorage.removeItem(CK);}catch(e){}
+    toast('Editor cleared.','info');
+  }
+}
+
+E('bch').onclick=()=>{
+  if(!ed.value.trim()){toast('Nothing to copy!','info');return;}
+  navigator.clipboard.writeText(buildHTML()||'').then(()=>toast('HTML copied!','success')).catch(()=>toast('Copy failed.','error'));
+};
+E('bdl').onclick=dlPDF;
+E('bpr').onclick=doPrint;
+E('bcl').onclick=clearEd;
+
+function toast(msg,type='info',ms=3200){
+  const el=document.createElement('div');
+  el.className='toast '+type;el.textContent=msg;
+  E('tc').appendChild(el);
+  setTimeout(()=>{el.style.transition='opacity .3s';el.style.opacity='0';setTimeout(()=>el.remove(),320);},ms);
+}
+
+(function init(){
+  loadAll();
+  if(!ed.value){
+    ed.value=`# Welcome to NotesToPDF 📄
+
+Paste any **LLM output** here and export a clean, print-ready PDF instantly.
+
+---
+
+## Supported Markdown
+
+Inline: **bold**, *italic*, \`inline code\`, [links](https://example.com)
+
+### Code Blocks with Syntax Highlighting
+
+\`\`\`javascript
+const fib = (() => {
+  const cache = {0:0, 1:1};
+  return function f(n) {
+    return n in cache ? cache[n] : (cache[n] = f(n-1) + f(n-2));
+  };
+})();
+console.log([...Array(10).keys()].map(fib));
+\`\`\`
+
+\`\`\`python
+def quicksort(arr):
+    if len(arr) <= 1: return arr
+    pivot = arr[len(arr)//2]
+    return quicksort([x for x in arr if x < pivot]) + \
+           [x for x in arr if x == pivot] + \
+           quicksort([x for x in arr if x > pivot])
+\`\`\`
+
+### Tables
+
+| Feature          | NotesToPDF | Browser Print | Copy-Paste |
+|-----------------|:----------:|:-------------:|:----------:|
+| Markdown render  | ✅         | ❌            | ❌         |
+| Syntax highlight | ✅         | ❌            | ❌         |
+| Custom margins   | ✅         | Partial       | ❌         |
+| Header / Footer  | ✅         | ❌            | ❌         |
+| Auto-save        | ✅         | N/A           | ❌         |
+| Drag & drop .md  | ✅         | ❌            | ❌         |
+
+### Blockquote
+
+> "Good notes are the foundation of good thinking.
+> Good formatting makes those notes readable by anyone."
+
+---
+
+**Shortcuts:** \`Ctrl+S\` → PDF · \`Ctrl+P\` → Print · \`Ctrl+L\` → Clear
+
+*Drag & drop a .md file onto the editor, or clear this and paste your LLM output!*
+`;
+    render();
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,2097 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>SplitLedger — Group Expense Manager</title>
+  <meta name="description" content="A structured, formal group expense tracker and bill splitting tool"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+/* ================================================================
+   DESIGN TOKENS
+================================================================ */
+:root {
+  --navy:        #0F172A;
+  --navy-2:      #1E293B;
+  --navy-3:      #334155;
+  --blue:        #2563EB;
+  --blue-hover:  #1D4ED8;
+  --blue-pale:   #EFF6FF;
+  --blue-border: #BFDBFE;
+  --green:       #16A34A;
+  --green-pale:  #F0FDF4;
+  --green-border:#BBF7D0;
+  --red:         #DC2626;
+  --red-pale:    #FEF2F2;
+  --red-border:  #FECACA;
+  --amber:       #B45309;
+  --amber-pale:  #FFFBEB;
+  --amber-border:#FDE68A;
+  --bg:          #F1F5F9;
+  --bg-2:        #E2E8F0;
+  --white:       #FFFFFF;
+  --text:        #0F172A;
+  --text-2:      #334155;
+  --text-3:      #64748B;
+  --text-4:      #94A3B8;
+  --border:      #E2E8F0;
+  --border-2:    #CBD5E1;
+
+  --mono: 'JetBrains Mono', 'Courier New', monospace;
+  --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+
+  --sh-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --sh-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --sh-lg: 0 10px 28px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.06);
+  --sh-xl: 0 20px 48px rgba(0,0,0,0.14), 0 8px 16px rgba(0,0,0,0.08);
+
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ================================================================
+   BASE
+================================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; font-size: 15px; scroll-behavior: smooth; }
+body {
+  min-height: 100%;
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+button { font-family: var(--sans); cursor: pointer; }
+input, select, textarea { font-family: var(--sans); }
+a { color: inherit; text-decoration: none; }
+
+/* ================================================================
+   TOPBAR
+================================================================ */
+.topbar {
+  background: var(--navy);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 58px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.topbar-logo {
+  display: flex; align-items: center; gap: 9px;
+  flex-shrink: 0;
+}
+.logo-mark {
+  width: 30px; height: 30px;
+  background: var(--blue);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800;
+  font-size: 0.875rem;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+.logo-text {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.2px;
+}
+.logo-text span { color: rgba(255,255,255,0.35); font-weight: 400; margin-left: 1px; }
+
+.topbar-divider {
+  width: 1px; height: 24px;
+  background: rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+
+.group-name-wrap { flex: 1; min-width: 0; }
+#groupNameEl {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.92);
+  outline: none;
+  border: 1.5px solid transparent;
+  background: transparent;
+  border-radius: var(--r-sm);
+  padding: 4px 8px;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#groupNameEl:empty::before {
+  content: attr(data-placeholder);
+  color: rgba(255,255,255,0.3);
+}
+#groupNameEl:focus {
+  border-color: rgba(99,153,255,0.4);
+  background: rgba(255,255,255,0.06);
+}
+
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+.tb-btn {
+  height: 34px;
+  padding: 0 13px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.8);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  display: flex; align-items: center; gap: 6px;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease);
+  white-space: nowrap;
+}
+.tb-btn:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,255,255,0.2); color: #fff; }
+.tb-btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+.tb-btn.primary:hover { background: var(--blue-hover); border-color: var(--blue-hover); }
+
+/* ================================================================
+   STATS BAR
+================================================================ */
+.stats-bar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  gap: 0;
+}
+.stat-item {
+  padding: 14px 24px 14px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+.stat-item + .stat-item {
+  padding-left: 24px;
+  border-left: 1px solid var(--border);
+}
+.stat-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.stat-icon.blue { background: var(--blue-pale); }
+.stat-icon.green { background: var(--green-pale); }
+.stat-icon.amber { background: var(--amber-pale); }
+.stat-icon.navy { background: var(--bg); }
+.stat-text {}
+.stat-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-3);
+  line-height: 1;
+  margin-bottom: 3px;
+}
+.stat-value {
+  font-family: var(--mono);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1;
+}
+.stat-value.green { color: var(--green); }
+.stat-value.red { color: var(--red); }
+.stat-value.blue { color: var(--blue); }
+
+/* ================================================================
+   MAIN LAYOUT
+================================================================ */
+.main-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 24px 40px;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ================================================================
+   PANEL (shared card)
+================================================================ */
+.panel {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-sm);
+  overflow: hidden;
+}
+.panel-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.panel-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text);
+  display: flex; align-items: center; gap: 7px;
+}
+.panel-title svg { opacity: 0.5; }
+
+/* ================================================================
+   EXPENSE SECTION (LEFT)
+================================================================ */
+.expense-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.add-btn {
+  height: 38px;
+  padding: 0 16px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex; align-items: center; gap: 7px;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+  transition: transform 0.15s var(--spring), box-shadow 0.15s var(--ease), background 0.15s;
+  flex-shrink: 0;
+}
+.add-btn:hover { background: var(--blue-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+.add-btn:active { transform: translateY(0); }
+
+.search-wrap {
+  flex: 1;
+  min-width: 160px;
+  position: relative;
+}
+.search-wrap svg {
+  position: absolute;
+  left: 11px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-4);
+  pointer-events: none;
+}
+#searchIn {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px 0 34px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 0.875rem;
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+#searchIn:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+#searchIn::placeholder { color: var(--text-4); }
+
+.sort-select {
+  height: 38px;
+  padding: 0 30px 0 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 0.8125rem;
+  font-family: var(--sans);
+  color: var(--text-2);
+  background: var(--white);
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%2394A3B8' d='M1 1l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease);
+}
+.sort-select:focus { border-color: var(--blue); outline: none; }
+
+/* ================================================================
+   EXPENSE TABLE
+================================================================ */
+.expense-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.expense-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.expense-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  user-select: none;
+}
+.expense-table th:first-child { border-radius: 0; }
+.expense-table th:last-child { text-align: right; }
+.expense-table th.sortable { cursor: pointer; }
+.expense-table th.sortable:hover { color: var(--text); background: var(--bg-2); }
+.sort-indicator { margin-left: 4px; opacity: 0.5; font-size: 0.625rem; }
+
+.expense-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  color: var(--text-2);
+}
+.expense-table tr:last-child td { border-bottom: none; }
+.expense-table tr:hover td { background: #FAFBFD; }
+.expense-table tr { transition: background 0.1s; }
+
+.td-date {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.td-desc {
+  font-weight: 600;
+  color: var(--text);
+  max-width: 180px;
+}
+.td-desc-sub {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  font-weight: 400;
+  margin-top: 1px;
+}
+.td-payer {}
+.payer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 9px 3px 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.payer-dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.td-amount {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+.td-split {
+  color: var(--text-3);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+.td-actions { text-align: right; }
+.row-actions { display: flex; gap: 4px; justify-content: flex-end; }
+.row-btn {
+  width: 28px; height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--white);
+  color: var(--text-3);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s var(--ease);
+}
+.row-btn:hover { background: var(--blue-pale); color: var(--blue); border-color: var(--blue-border); }
+.row-btn.danger:hover { background: var(--red-pale); color: var(--red); border-color: var(--red-border); }
+
+.empty-table-state {
+  padding: 48px 24px;
+  text-align: center;
+}
+.empty-table-icon {
+  width: 52px; height: 52px;
+  border-radius: var(--r-md);
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  margin: 0 auto 14px;
+  border: 1px solid var(--border);
+}
+.empty-table-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.empty-table-sub { font-size: 0.8125rem; color: var(--text-3); }
+
+/* ================================================================
+   SIDEBAR (RIGHT)
+================================================================ */
+.sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+/* Member Balances */
+.member-balance-row {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.1s;
+}
+.member-balance-row:last-child { border-bottom: none; }
+.member-balance-row:hover { background: var(--bg); }
+.mb-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.mb-info { flex: 1; min-width: 0; }
+.mb-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mb-label {
+  font-size: 0.6875rem;
+  color: var(--text-3);
+}
+.mb-amount {
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: right;
+}
+.mb-amount.pos { color: var(--green); }
+.mb-amount.neg { color: var(--red); }
+.mb-amount.zero { color: var(--text-4); }
+.mb-bar-wrap {
+  width: 100%;
+  height: 3px;
+  background: var(--bg-2);
+  border-radius: 999px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+.mb-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s var(--ease);
+}
+.mb-bar.pos { background: var(--green); }
+.mb-bar.neg { background: var(--red); }
+.mb-bar.zero { background: var(--text-4); width: 100% !important; opacity: 0.3; }
+
+/* Settlement rows */
+.settle-row {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: fadeRow 0.3s var(--ease) both;
+}
+.settle-row:last-child { border-bottom: none; }
+.settle-from, .settle-to {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.settle-arrow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-4);
+  flex-shrink: 0;
+}
+.settle-arrow-line {
+  width: 28px; height: 1.5px;
+  background: var(--border-2);
+  flex-shrink: 0;
+}
+.settle-spacer { flex: 1; }
+.settle-amount {
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--red);
+  background: var(--red-pale);
+  border: 1px solid var(--red-border);
+  border-radius: var(--r-sm);
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+.settled-msg {
+  padding: 20px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--green);
+}
+.settled-icon {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--green-pale);
+  border: 1px solid var(--green-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+.settled-text { font-size: 0.875rem; font-weight: 600; }
+.settled-text span { display: block; font-size: 0.75rem; color: var(--text-3); font-weight: 400; }
+
+@keyframes fadeRow {
+  from { opacity: 0; transform: translateX(6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ================================================================
+   APP ABOUT SECTION
+================================================================ */
+.about-section {
+  background: var(--navy);
+  color: rgba(255,255,255,0.85);
+  padding: 40px 24px;
+}
+.about-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 32px;
+}
+.about-brand {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.about-logo-mark {
+  width: 36px; height: 36px;
+  background: var(--blue);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+  color: #fff;
+}
+.about-logo-text {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #fff;
+}
+.about-tagline {
+  color: rgba(255,255,255,0.45);
+  font-size: 0.875rem;
+  margin-top: 2px;
+  margin-bottom: 24px;
+  grid-column: 1 / -1;
+}
+.about-col-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 12px;
+}
+.about-col-body {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.7;
+}
+.about-feature-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.about-feature-list li {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.6);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.about-feature-list li::before {
+  content: '✓';
+  color: var(--blue);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.about-footer-bar {
+  background: rgba(0,0,0,0.25);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 0.8125rem;
+  color: rgba(255,255,255,0.3);
+}
+
+/* ================================================================
+   MODALS
+================================================================ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.65);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s var(--ease);
+}
+.overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.modal {
+  background: var(--white);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-xl);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateY(16px) scale(0.98);
+  transition: transform 0.25s var(--spring);
+  scrollbar-width: thin;
+}
+.overlay.open .modal { transform: translateY(0) scale(1); }
+
+.modal-head {
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.modal-title-block {}
+.modal-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.modal-subtitle {
+  font-size: 0.8125rem;
+  color: var(--text-3);
+  margin-top: 3px;
+}
+.modal-close {
+  width: 30px; height: 30px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--text-3);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s var(--ease);
+  flex-shrink: 0;
+}
+.modal-close:hover { background: var(--red-pale); color: var(--red); border-color: var(--red-border); }
+
+.modal-body { padding: 22px 24px; }
+.modal-footer {
+  padding: 14px 24px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+}
+.modal-footer .btn { flex: 1; }
+
+/* ================================================================
+   FORM ELEMENTS
+================================================================ */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-2);
+}
+.form-input, .form-select {
+  height: 42px;
+  padding: 0 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 0.9rem;
+  font-family: var(--sans);
+  color: var(--text);
+  background: var(--white);
+  outline: none;
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+  width: 100%;
+}
+.form-input:focus, .form-select:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+.form-input::placeholder { color: var(--text-4); }
+.form-input.error { border-color: var(--red); box-shadow: 0 0 0 3px rgba(220,38,38,0.1); }
+.form-error { font-size: 0.75rem; color: var(--red); margin-top: 2px; display: none; }
+.form-error.show { display: block; }
+
+.amount-field {
+  display: flex;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+.amount-field:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+.amount-prefix {
+  padding: 0 12px;
+  background: var(--bg);
+  border-right: 1.5px solid var(--border);
+  display: flex; align-items: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-3);
+  white-space: nowrap;
+  font-family: var(--mono);
+}
+.amount-field .form-input {
+  border: none;
+  border-radius: 0;
+  box-shadow: none !important;
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%2394A3B8' d='M1 1l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+.participants-section { margin-top: 4px; }
+.participants-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-2);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.participants-toggle-all {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--blue);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.participants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 7px;
+}
+.p-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 11px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  background: var(--white);
+  transition: all 0.15s var(--ease);
+  user-select: none;
+}
+.p-chip input { display: none; }
+.p-check {
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid var(--border-2);
+  background: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s var(--ease);
+}
+.p-chip-name { font-size: 0.8125rem; font-weight: 500; color: var(--text-2); }
+.p-chip.on {
+  background: var(--blue-pale);
+  border-color: var(--blue);
+}
+.p-chip.on .p-check {
+  background: var(--blue);
+  border-color: var(--blue);
+}
+.p-chip.on .p-chip-name { color: var(--blue); font-weight: 600; }
+
+/* ================================================================
+   BUTTONS
+================================================================ */
+.btn {
+  height: 42px;
+  padding: 0 18px;
+  border-radius: var(--r-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--sans);
+  border: 1.5px solid transparent;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+  white-space: nowrap;
+}
+.btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn-primary:hover { background: var(--blue-hover); border-color: var(--blue-hover); }
+.btn-ghost { background: var(--white); color: var(--text-2); border-color: var(--border); }
+.btn-ghost:hover { background: var(--bg); }
+.btn-danger { background: var(--red-pale); color: var(--red); border-color: var(--red-border); }
+.btn-danger:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+/* ================================================================
+   MEMBER EDIT LIST
+================================================================ */
+.member-edit-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+.member-edit-item:last-child { border-bottom: none; }
+.me-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.me-name { flex: 1; font-size: 0.875rem; font-weight: 500; }
+.me-remove {
+  width: 26px; height: 26px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--white);
+  color: var(--text-4);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+.me-remove:hover { background: var(--red-pale); color: var(--red); border-color: var(--red-border); }
+.add-member-field {
+  display: flex; gap: 8px; margin-top: 14px;
+}
+.add-member-field .form-input { flex: 1; }
+.add-member-field .btn { padding: 0 14px; height: 42px; }
+
+/* ================================================================
+   DIVIDER
+================================================================ */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 18px 0;
+}
+
+/* ================================================================
+   TOAST
+================================================================ */
+.toast-wrap {
+  position: fixed;
+  top: 72px;
+  right: 20px;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  padding: 11px 15px;
+  border-radius: var(--r-md);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  box-shadow: var(--sh-lg);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 240px;
+  max-width: 320px;
+  animation: toastSlide 0.25s var(--spring) both, toastFade 0.25s var(--ease) 2.3s both;
+  pointer-events: all;
+  border: 1px solid transparent;
+}
+.toast.success { background: var(--white); color: var(--green); border-color: var(--green-border); }
+.toast.error   { background: var(--white); color: var(--red);   border-color: var(--red-border); }
+.toast.info    { background: var(--white); color: var(--navy-3); border-color: var(--border); }
+.toast-icon { font-size: 1rem; flex-shrink: 0; }
+
+@keyframes toastSlide {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes toastFade {
+  from { opacity: 1; }
+  to   { opacity: 0; transform: translateX(10px); }
+}
+
+/* ================================================================
+   BADGE
+================================================================ */
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+.badge-count {
+  background: var(--blue-pale);
+  color: var(--blue);
+  border: 1px solid var(--blue-border);
+}
+
+/* ================================================================
+   NO RESULTS
+================================================================ */
+.no-results {
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 0.875rem;
+}
+
+/* ================================================================
+   RESPONSIVE
+================================================================ */
+@media (max-width: 900px) {
+  .main-wrap {
+    grid-template-columns: 1fr;
+    padding: 16px 16px 32px;
+    gap: 16px;
+  }
+  .sidebar { grid-row: 2; }
+  .about-inner { grid-template-columns: 1fr; gap: 20px; }
+  .about-tagline, .about-brand { grid-column: 1; }
+}
+@media (max-width: 640px) {
+  .stats-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .stat-item { min-width: 130px; }
+  .topbar { padding: 0 14px; height: 52px; }
+  .logo-text { display: none; }
+  .tb-btn span { display: none; }
+  .tb-btn { padding: 0 10px; }
+  .expense-controls { gap: 8px; }
+  /* Mobile: hide some table columns */
+  .expense-table .col-date,
+  .expense-table .col-split { display: none; }
+}
+@media (max-width: 420px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .form-group.full { grid-column: 1; }
+}
+
+/* Hide */
+.hidden { display: none !important; }
+
+/* Scroll style */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg-2); border-radius: 999px; }
+
+/* Animation for new table rows */
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(-6px); background: var(--blue-pale); }
+  to   { opacity: 1; transform: translateY(0); background: transparent; }
+}
+.row-new { animation: rowIn 0.5s var(--ease) both; }
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     TOPBAR
+================================================================ -->
+<header class="topbar" role="banner">
+  <div class="topbar-logo">
+    <div class="logo-mark">SL</div>
+    <div class="logo-text">SplitLedger<span>·</span></div>
+  </div>
+  <div class="topbar-divider"></div>
+  <div class="group-name-wrap">
+    <div id="groupNameEl"
+      contenteditable="true"
+      data-placeholder="Group Name"
+      aria-label="Edit group name"
+      role="textbox"
+      spellcheck="false"></div>
+  </div>
+  <div class="topbar-actions">
+    <button id="exportBtn" class="tb-btn" aria-label="Export CSV">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span>Export</span>
+    </button>
+    <button id="openEditGroupBtn" class="tb-btn" aria-label="Manage group">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>
+      <span>Members</span>
+    </button>
+  </div>
+</header>
+
+<!-- ================================================================
+     STATS BAR
+================================================================ -->
+<div class="stats-bar" role="region" aria-label="Summary statistics">
+  <div class="stat-item">
+    <div class="stat-icon blue">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+    </div>
+    <div class="stat-text">
+      <div class="stat-label">Payments</div>
+      <div class="stat-value" id="statPayments">0</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon green">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    </div>
+    <div class="stat-text">
+      <div class="stat-label">Total Spent</div>
+      <div class="stat-value green" id="statTotal">₹0</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon navy">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div class="stat-text">
+      <div class="stat-label">Members</div>
+      <div class="stat-value" id="statMembers">0</div>
+    </div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-icon amber">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div class="stat-text">
+      <div class="stat-label">Pending</div>
+      <div class="stat-value" id="statPending">0</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MAIN CONTENT
+================================================================ -->
+<div class="main-wrap">
+
+  <!-- LEFT: EXPENSES -->
+  <div>
+    <!-- Controls -->
+    <div class="expense-controls">
+      <button id="openAddBtn" class="add-btn" aria-label="Add payment">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Payment
+      </button>
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchIn" placeholder="Search payments…" autocomplete="off" aria-label="Search payments">
+      </div>
+      <select id="sortSel" class="sort-select" aria-label="Sort expenses">
+        <option value="date-desc">Newest first</option>
+        <option value="date-asc">Oldest first</option>
+        <option value="amount-desc">Highest amount</option>
+        <option value="amount-asc">Lowest amount</option>
+      </select>
+    </div>
+
+    <!-- Expense Table -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Payment Ledger
+        </div>
+        <span class="badge badge-count" id="expenseCountBadge">0 entries</span>
+      </div>
+      <div class="expense-table-wrap">
+        <table class="expense-table" id="expenseTable" aria-label="Expense records">
+          <thead>
+            <tr>
+              <th class="col-date" style="width:110px">Date</th>
+              <th style="min-width:140px">Description</th>
+              <th style="width:120px">Paid By</th>
+              <th style="width:110px">Amount</th>
+              <th class="col-split" style="width:130px">Split Among</th>
+              <th style="width:80px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="expenseTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Member Balances -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          Member Balances
+        </div>
+      </div>
+      <div id="balancesList"></div>
+    </div>
+
+    <!-- Settle Up -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+          Settle Up
+        </div>
+      </div>
+      <div id="settleList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================================================================
+     ABOUT SECTION
+================================================================ -->
+<section class="about-section" aria-labelledby="aboutTitle">
+  <div class="about-inner">
+    <div class="about-brand">
+      <div class="about-logo-mark">SL</div>
+      <div class="about-logo-text" id="aboutTitle">SplitLedger</div>
+    </div>
+    <p class="about-tagline">A structured group expense tracker for trips, flatmates, events &amp; teams.</p>
+
+    <div>
+      <div class="about-col-title">What is SplitLedger?</div>
+      <div class="about-col-body">
+        SplitLedger is a lightweight, browser-based expense splitting tool designed for groups of any size. It helps you record who paid for what, see each person's running balance, and calculate the minimum number of transactions needed to settle all debts — with zero server, no login, and no fees. All data is stored securely on your own device via localStorage.
+      </div>
+    </div>
+
+    <div>
+      <div class="about-col-title">How It Works</div>
+      <ul class="about-feature-list">
+        <li>Create or name your group (trip, flatmates, event).</li>
+        <li>Add all group members — no accounts required.</li>
+        <li>Record each payment: who paid, how much, and who benefits.</li>
+        <li>Watch the live balance panel update in real time.</li>
+        <li>Follow the "Settle Up" instructions to clear all debts.</li>
+        <li>Export your full record as a CSV spreadsheet anytime.</li>
+      </ul>
+    </div>
+
+    <div>
+      <div class="about-col-title">Key Features</div>
+      <ul class="about-feature-list">
+        <li>Real-time per-person balance with visual indicators</li>
+        <li>Debt minimisation algorithm for fewest transactions</li>
+        <li>Search &amp; sort across all expense records</li>
+        <li>Full edit &amp; delete of any past payment</li>
+        <li>CSV export for records &amp; accounting</li>
+        <li>Fully offline — data stays on your device</li>
+        <li>Mobile-responsive, works on any screen</li>
+      </ul>
+    </div>
+  </div>
+</section>
+<div class="about-footer-bar">
+  <span>© 2025 premmalik.in — SplitLedger</span>
+  <span>All data is stored locally in your browser. Nothing is sent to any server.</span>
+</div>
+
+<!-- ================================================================
+     TOASTS
+================================================================ -->
+<div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+<!-- ================================================================
+     MODAL: ADD / EDIT PAYMENT
+================================================================ -->
+<div id="addOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title-block">
+        <div class="modal-title" id="addModalTitle">Add Payment</div>
+        <div class="modal-subtitle" id="addModalSub">Record a new shared expense</div>
+      </div>
+      <button class="modal-close" id="closeAddBtn" aria-label="Close">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="payerSel">Paid By</label>
+          <select class="form-select" id="payerSel"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="amountIn">Amount</label>
+          <div class="amount-field">
+            <div class="amount-prefix">₹</div>
+            <input class="form-input" type="number" id="amountIn" placeholder="0.00" min="0" step="0.01">
+          </div>
+          <div class="form-error" id="amountErr">Enter a valid amount greater than 0</div>
+        </div>
+        <div class="form-group full">
+          <label class="form-label" for="descIn">Description</label>
+          <input class="form-input" type="text" id="descIn" placeholder="e.g. Hotel booking, dinner, fuel…" autocomplete="off">
+          <div class="form-error" id="descErr">Please enter a description</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="participants-section">
+        <div class="participants-label">
+          Split Between
+          <button class="participants-toggle-all" id="toggleAllChips" type="button">Toggle All</button>
+        </div>
+        <div class="participants-grid" id="participantsGrid" aria-label="Select participants"></div>
+        <div class="form-error" id="participantsErr" style="margin-top:8px">Select at least one participant</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancelAddBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveExpenseBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Save Payment
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MODAL: MANAGE GROUP
+================================================================ -->
+<div id="editOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title-block">
+        <div class="modal-title" id="editModalTitle">Manage Group</div>
+        <div class="modal-subtitle">Add or remove members, rename the group</div>
+      </div>
+      <button class="modal-close" id="closeEditBtn" aria-label="Close">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" for="editGroupNameIn">Group Name</label>
+        <input class="form-input" type="text" id="editGroupNameIn" placeholder="e.g. Goa Trip 2025, Flatmates…">
+      </div>
+      <div class="divider"></div>
+      <div class="form-label" style="margin-bottom:10px">Members (<span id="memberCountLabel">0</span>)</div>
+      <div id="memberEditList"></div>
+      <div class="add-member-field">
+        <input class="form-input" type="text" id="newMemberIn" placeholder="Enter member name…" autocomplete="off">
+        <button class="btn btn-primary" id="addMemberBtn" style="padding:0 16px; height:42px;">Add</button>
+      </div>
+      <div class="form-error" id="memberErr" style="margin-top:6px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="openClearBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        Clear Data
+      </button>
+      <button class="btn btn-primary" id="saveGroupBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Save Group
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     MODAL: CONFIRM CLEAR
+================================================================ -->
+<div id="clearOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="clearModalTitle">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-head">
+      <div class="modal-title-block">
+        <div class="modal-title" id="clearModalTitle" style="color:var(--red)">Delete All Data?</div>
+        <div class="modal-subtitle">This action is permanent and cannot be undone.</div>
+      </div>
+      <button class="modal-close" id="closeClearBtn" aria-label="Close">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--red-pale);border:1px solid var(--red-border);border-radius:var(--r-md);padding:12px 14px;font-size:0.875rem;color:var(--red);margin-bottom:16px;">
+        ⚠ This will permanently delete all payments, members, and group data stored in your browser.
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="clearIn">Type <strong>DELETE</strong> to confirm</label>
+        <input class="form-input" type="text" id="clearIn" placeholder="Type DELETE" autocomplete="off">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancelClearBtn">Cancel</button>
+      <button class="btn btn-danger" id="confirmClearBtn">Delete Everything</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     JAVASCRIPT
+================================================================ -->
+<script>
+(() => {
+'use strict';
+
+/* ================================================================
+   CONSTANTS & STATE
+================================================================ */
+const STORAGE_KEY = 'splitledger_v1';
+const DATE_FMT = { year: 'numeric', month: 'short', day: 'numeric' };
+const MEMBER_COLORS = [
+  '#2563EB','#16A34A','#DC2626','#B45309','#7C3AED',
+  '#0891B2','#C2410C','#0F766E','#4338CA','#BE185D'
+];
+
+let state = {
+  groupName: '',
+  members: [],
+  expenses: [],
+};
+
+let editingIdx = -1;
+let sortMode = 'date-desc';
+let searchQuery = '';
+
+/* ================================================================
+   UTILITIES
+================================================================ */
+const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+const esc    = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function debounce(fn, ms = 250) {
+  let t;
+  return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+}
+function getColor(name) {
+  let h = 0;
+  for (const c of (name || '')) h = (h * 31 + c.charCodeAt(0)) & 0x7fffffff;
+  return MEMBER_COLORS[h % MEMBER_COLORS.length];
+}
+function getInitials(name) {
+  return (name || '?').trim().split(/\s+/).map(w => w[0] || '').join('').toUpperCase().slice(0, 2);
+}
+function fmtMoney(n) {
+  return '₹' + Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/* ================================================================
+   PERSISTENCE
+================================================================ */
+function load() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    if (s) Object.assign(state, JSON.parse(s));
+  } catch(e) { console.warn('load error', e); }
+}
+const persist = debounce(() => {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}, 200);
+
+/* ================================================================
+   TOAST
+================================================================ */
+function toast(msg, type = 'info') {
+  const icons = { success: '✓', error: '✕', info: 'ℹ' };
+  const wrap = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${esc(msg)}</span>`;
+  wrap.appendChild(t);
+  setTimeout(() => t.remove(), 2700);
+}
+
+/* ================================================================
+   MODAL SYSTEM
+================================================================ */
+const overlays = {};
+document.querySelectorAll('.overlay').forEach(el => {
+  overlays[el.id] = el;
+  el.addEventListener('click', e => { if (e.target === el) closeModal(el.id); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') Object.keys(overlays).forEach(closeModal);
+});
+
+function openModal(id) {
+  const el = overlays[id];
+  if (!el) return;
+  el.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => {
+    const f = el.querySelector('input:not([type="hidden"]), select, button');
+    if (f) f.focus();
+  });
+}
+function closeModal(id) {
+  const el = overlays[id];
+  if (el) el.classList.remove('open');
+  if (!document.querySelector('.overlay.open')) document.body.style.overflow = '';
+}
+
+/* ================================================================
+   COMPUTE BALANCES
+================================================================ */
+function computeBalances() {
+  const bal = {};
+  state.members.forEach(m => bal[m] = 0);
+  state.expenses.forEach(e => {
+    const amt = Number(e.amount) || 0;
+    const n = (e.participants || []).length || 1;
+    const share = amt / n;
+    (e.participants || []).forEach(p => { if (!(p in bal)) bal[p] = 0; bal[p] -= share; });
+    if (!(e.payer in bal)) bal[e.payer] = 0;
+    bal[e.payer] += amt;
+  });
+  Object.keys(bal).forEach(k => bal[k] = round2(bal[k]));
+  return bal;
+}
+
+function computeSettlements() {
+  const bal = computeBalances();
+  const creds = [], debts = [];
+  for (const [n, v] of Object.entries(bal)) {
+    if (v > 0.005) creds.push({ name: n, amt: v });
+    else if (v < -0.005) debts.push({ name: n, amt: -v });
+  }
+  creds.sort((a, b) => b.amt - a.amt);
+  debts.sort((a, b) => b.amt - a.amt);
+  const res = [];
+  while (creds.length && debts.length) {
+    const c = creds[0], d = debts[0];
+    const settle = round2(Math.min(c.amt, d.amt));
+    res.push({ from: d.name, to: c.name, amount: settle });
+    c.amt = round2(c.amt - settle);
+    d.amt = round2(d.amt - settle);
+    if (c.amt <= 0.005) creds.shift();
+    if (d.amt <= 0.005) debts.shift();
+  }
+  return res;
+}
+
+function totalSpent() {
+  return round2(state.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0));
+}
+
+/* ================================================================
+   RENDER STATS BAR
+================================================================ */
+function renderStats() {
+  const settles = computeSettlements();
+  document.getElementById('statPayments').textContent = state.expenses.length;
+  document.getElementById('statTotal').textContent = fmtMoney(totalSpent());
+  document.getElementById('statMembers').textContent = state.members.length;
+  document.getElementById('statPending').textContent = settles.length;
+}
+
+/* ================================================================
+   RENDER EXPENSE TABLE
+================================================================ */
+function filteredExpenses() {
+  let list = state.expenses.map((e, i) => ({ ...e, _idx: i }));
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    list = list.filter(e =>
+      (e.desc || '').toLowerCase().includes(q) ||
+      (e.payer || '').toLowerCase().includes(q) ||
+      (e.participants || []).some(p => p.toLowerCase().includes(q))
+    );
+  }
+  list.sort((a, b) => {
+    if (sortMode === 'date-desc') return b._idx - a._idx;
+    if (sortMode === 'date-asc')  return a._idx - b._idx;
+    if (sortMode === 'amount-desc') return Number(b.amount) - Number(a.amount);
+    if (sortMode === 'amount-asc')  return Number(a.amount) - Number(b.amount);
+    return 0;
+  });
+  return list;
+}
+
+function renderExpenses() {
+  const tbody = document.getElementById('expenseTbody');
+  tbody.innerHTML = '';
+
+  const list = filteredExpenses();
+  const badge = document.getElementById('expenseCountBadge');
+  badge.textContent = `${state.expenses.length} ${state.expenses.length === 1 ? 'entry' : 'entries'}`;
+
+  if (!state.expenses.length) {
+    tbody.innerHTML = `<tr><td colspan="6">
+      <div class="empty-table-state">
+        <div class="empty-table-icon">🧾</div>
+        <div class="empty-table-title">No payments recorded yet</div>
+        <div class="empty-table-sub">Click "Add Payment" to log your first shared expense</div>
+      </div>
+    </td></tr>`;
+    return;
+  }
+
+  if (!list.length && searchQuery) {
+    tbody.innerHTML = `<tr><td colspan="6">
+      <div class="no-results">No payments match "<strong>${esc(searchQuery)}</strong>"</div>
+    </td></tr>`;
+    return;
+  }
+
+  list.forEach((exp, rowPos) => {
+    const color = getColor(exp.payer);
+    const initials = getInitials(exp.payer);
+    const parts = exp.participants || [];
+    const splitStr = parts.length <= 2
+      ? parts.join(', ')
+      : `${parts.slice(0, 2).join(', ')} +${parts.length - 2}`;
+    const shareAmt = exp.participants.length > 0
+      ? fmtMoney(Number(exp.amount) / exp.participants.length)
+      : '—';
+
+    const tr = document.createElement('tr');
+    tr.style.animationDelay = `${rowPos * 25}ms`;
+    tr.innerHTML = `
+      <td class="td-date col-date">${esc(exp.date || '—')}</td>
+      <td class="td-desc">
+        <div>${esc(exp.desc)}</div>
+        <div class="td-desc-sub">${shareAmt}/person</div>
+      </td>
+      <td class="td-payer">
+        <span class="payer-badge">
+          <span class="payer-dot" style="background:${color}">${esc(initials)}</span>
+          ${esc(exp.payer)}
+        </span>
+      </td>
+      <td class="td-amount">${fmtMoney(Number(exp.amount))}</td>
+      <td class="td-split col-split" title="${esc(parts.join(', '))}">${esc(splitStr)}</td>
+      <td class="td-actions">
+        <div class="row-actions">
+          <button class="row-btn edit-row-btn" data-idx="${exp._idx}" aria-label="Edit payment" title="Edit">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="row-btn danger del-row-btn" data-idx="${exp._idx}" aria-label="Delete payment" title="Delete">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          </button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('.edit-row-btn').forEach(btn => {
+    btn.addEventListener('click', () => openEditExpense(+btn.dataset.idx));
+  });
+  tbody.querySelectorAll('.del-row-btn').forEach(btn => {
+    btn.addEventListener('click', () => deleteExpense(+btn.dataset.idx));
+  });
+}
+
+/* ================================================================
+   RENDER BALANCES
+================================================================ */
+function renderBalances() {
+  const bal = computeBalances();
+  const container = document.getElementById('balancesList');
+  container.innerHTML = '';
+
+  if (!state.members.length) {
+    container.innerHTML = `<div style="padding:16px;font-size:0.8125rem;color:var(--text-3);text-align:center">No members yet</div>`;
+    return;
+  }
+
+  const maxAbs = Math.max(...Object.values(bal).map(Math.abs), 0.01);
+
+  state.members.forEach(m => {
+    const v = bal[m] || 0;
+    const cls = v > 0.005 ? 'pos' : v < -0.005 ? 'neg' : 'zero';
+    const label = v > 0.005 ? 'gets back' : v < -0.005 ? 'owes' : 'settled';
+    const barPct = Math.min(100, (Math.abs(v) / maxAbs) * 100);
+
+    const row = document.createElement('div');
+    row.className = 'member-balance-row';
+    row.innerHTML = `
+      <div class="mb-avatar" style="background:${getColor(m)}">${esc(getInitials(m))}</div>
+      <div class="mb-info">
+        <div class="mb-name">${esc(m)}</div>
+        <div class="mb-bar-wrap">
+          <div class="mb-bar ${cls}" style="width:${barPct}%"></div>
+        </div>
+        <div class="mb-label">${esc(label)}</div>
+      </div>
+      <div class="mb-amount ${cls}">${v === 0 ? '—' : (v > 0 ? '+' : '') + fmtMoney(v)}</div>`;
+    container.appendChild(row);
+  });
+}
+
+/* ================================================================
+   RENDER SETTLEMENTS
+================================================================ */
+function renderSettlements() {
+  const settles = computeSettlements();
+  const container = document.getElementById('settleList');
+  container.innerHTML = '';
+
+  if (!settles.length) {
+    container.innerHTML = `
+      <div class="settled-msg">
+        <div class="settled-icon">✓</div>
+        <div class="settled-text">
+          All settled!
+          <span>${state.expenses.length ? 'No outstanding debts between members.' : 'Add payments to calculate settlements.'}</span>
+        </div>
+      </div>`;
+    return;
+  }
+
+  settles.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'settle-row';
+    row.innerHTML = `
+      <div class="mb-avatar" style="background:${getColor(s.from)};width:26px;height:26px;font-size:0.5625rem">${esc(getInitials(s.from))}</div>
+      <div class="settle-from">${esc(s.from)}</div>
+      <div class="settle-arrow">
+        <div class="settle-arrow-line"></div>
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4h6M5 2l2 2-2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="mb-avatar" style="background:${getColor(s.to)};width:26px;height:26px;font-size:0.5625rem">${esc(getInitials(s.to))}</div>
+      <div class="settle-to">${esc(s.to)}</div>
+      <div class="settle-spacer"></div>
+      <div class="settle-amount">${fmtMoney(s.amount)}</div>`;
+    container.appendChild(row);
+  });
+}
+
+/* ================================================================
+   RENDER MEMBER EDIT LIST
+================================================================ */
+function renderMemberEditList() {
+  const container = document.getElementById('memberEditList');
+  container.innerHTML = '';
+  document.getElementById('memberCountLabel').textContent = state.members.length;
+
+  state.members.forEach(m => {
+    const row = document.createElement('div');
+    row.className = 'member-edit-item';
+    row.innerHTML = `
+      <div class="me-avatar" style="background:${getColor(m)}">${esc(getInitials(m))}</div>
+      <div class="me-name">${esc(m)}</div>
+      <button class="me-remove" data-name="${esc(m)}" aria-label="Remove ${esc(m)}" title="Remove">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>`;
+    container.appendChild(row);
+  });
+
+  container.querySelectorAll('.me-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      removeMember(btn.dataset.name);
+      renderMemberEditList();
+    });
+  });
+}
+
+/* ================================================================
+   RENDER ADD FORM
+================================================================ */
+function renderAddForm(exp = null) {
+  const payerSel = document.getElementById('payerSel');
+  payerSel.innerHTML = '';
+  state.members.forEach(m => {
+    const o = document.createElement('option');
+    o.value = m; o.textContent = m;
+    payerSel.appendChild(o);
+  });
+
+  const grid = document.getElementById('participantsGrid');
+  grid.innerHTML = '';
+  state.members.forEach(m => {
+    const checked = exp ? (exp.participants || []).includes(m) : true;
+    const lbl = document.createElement('label');
+    lbl.className = `p-chip${checked ? ' on' : ''}`;
+    lbl.tabIndex = 0;
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.value = m; cb.checked = checked;
+
+    const check = document.createElement('div');
+    check.className = 'p-check';
+    check.innerHTML = checked
+      ? `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+      : '';
+
+    const name = document.createElement('div');
+    name.className = 'p-chip-name';
+    name.textContent = m;
+
+    lbl.appendChild(cb); lbl.appendChild(check); lbl.appendChild(name);
+
+    const update = () => {
+      lbl.classList.toggle('on', cb.checked);
+      check.innerHTML = cb.checked
+        ? `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+        : '';
+    };
+    cb.addEventListener('change', update);
+    lbl.addEventListener('keydown', e => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); cb.checked = !cb.checked; update(); }
+    });
+
+    grid.appendChild(lbl);
+  });
+
+  if (exp) {
+    payerSel.value = exp.payer;
+    document.getElementById('descIn').value = exp.desc;
+    document.getElementById('amountIn').value = exp.amount;
+  } else {
+    document.getElementById('descIn').value = '';
+    document.getElementById('amountIn').value = '';
+  }
+
+  // Clear errors
+  ['descErr', 'amountErr', 'participantsErr'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('show');
+  });
+  document.getElementById('descIn').classList.remove('error');
+  document.getElementById('amountIn').classList.remove('error');
+}
+
+/* ================================================================
+   GROUP NAME (TOPBAR INLINE EDIT)
+================================================================ */
+function renderGroupName() {
+  const el = document.getElementById('groupNameEl');
+  if (document.activeElement !== el) {
+    el.textContent = state.groupName || '';
+  }
+}
+
+/* ================================================================
+   FULL REFRESH
+================================================================ */
+function refresh() {
+  renderGroupName();
+  renderStats();
+  renderExpenses();
+  renderBalances();
+  renderSettlements();
+}
+
+/* ================================================================
+   ACTIONS
+================================================================ */
+function addMember(name) {
+  name = String(name).trim();
+  const errEl = document.getElementById('memberErr');
+  if (!name) { errEl.textContent = 'Enter a name'; errEl.classList.add('show'); return false; }
+  if (state.members.map(m => m.toLowerCase()).includes(name.toLowerCase())) {
+    errEl.textContent = `"${name}" is already a member`; errEl.classList.add('show'); return false;
+  }
+  if (state.members.length >= 20) { errEl.textContent = 'Maximum 20 members'; errEl.classList.add('show'); return false; }
+  errEl.classList.remove('show');
+  state.members.push(name);
+  persist(); refresh();
+  return true;
+}
+
+function removeMember(name) {
+  if (state.members.length <= 1) { toast('Group needs at least one member', 'error'); return; }
+  state.members = state.members.filter(m => m !== name);
+  state.expenses = state.expenses.map(e => ({
+    ...e,
+    payer: e.payer === name ? (state.members[0] || '') : e.payer,
+    participants: (e.participants || []).filter(p => p !== name),
+  })).filter(e => e.payer);
+  persist(); refresh();
+  toast(`${name} removed`, 'info');
+}
+
+function validateAndSave() {
+  const payer  = document.getElementById('payerSel').value;
+  const desc   = document.getElementById('descIn').value.trim();
+  const amount = Number(document.getElementById('amountIn').value);
+  const parts  = Array.from(document.querySelectorAll('#participantsGrid input:checked')).map(i => i.value);
+
+  let valid = true;
+  const descIn = document.getElementById('descIn');
+  const amtIn  = document.getElementById('amountIn');
+
+  if (!desc) {
+    descIn.classList.add('error');
+    document.getElementById('descErr').classList.add('show');
+    valid = false;
+  } else {
+    descIn.classList.remove('error');
+    document.getElementById('descErr').classList.remove('show');
+  }
+
+  if (!amount || amount <= 0) {
+    amtIn.classList.add('error');
+    document.getElementById('amountErr').classList.add('show');
+    valid = false;
+  } else {
+    amtIn.classList.remove('error');
+    document.getElementById('amountErr').classList.remove('show');
+  }
+
+  if (!parts.length) {
+    document.getElementById('participantsErr').classList.add('show');
+    valid = false;
+  } else {
+    document.getElementById('participantsErr').classList.remove('show');
+  }
+
+  if (!valid) return;
+
+  const expense = {
+    payer, desc, amount: round2(amount), participants: parts,
+    date: new Date().toLocaleDateString(undefined, DATE_FMT),
+  };
+
+  if (editingIdx >= 0) {
+    expense.date = state.expenses[editingIdx].date;
+    state.expenses[editingIdx] = expense;
+    editingIdx = -1;
+    toast('Payment updated', 'success');
+  } else {
+    state.expenses.unshift(expense);
+    toast('Payment saved', 'success');
+  }
+
+  persist(); refresh();
+  closeModal('addOverlay');
+}
+
+function openEditExpense(idx) {
+  const exp = state.expenses[idx];
+  if (!exp) return;
+  editingIdx = idx;
+  renderAddForm(exp);
+  document.getElementById('addModalTitle').textContent = 'Edit Payment';
+  document.getElementById('addModalSub').textContent = 'Update the details of this expense';
+  openModal('addOverlay');
+}
+
+function deleteExpense(idx) {
+  if (!confirm('Delete this payment? This cannot be undone.')) return;
+  const name = state.expenses[idx]?.desc || 'Payment';
+  state.expenses.splice(idx, 1);
+  persist(); refresh();
+  toast(`"${name}" deleted`, 'info');
+}
+
+function exportCsv() {
+  if (!state.expenses.length) { toast('No payments to export', 'error'); return; }
+  const rows = [['#', 'Date', 'Description', 'Paid By', 'Amount (₹)', 'Per Person (₹)', 'Split Among']];
+  state.expenses.forEach((e, i) => {
+    const per = e.participants.length > 0 ? round2(Number(e.amount) / e.participants.length) : Number(e.amount);
+    rows.push([i + 1, e.date, e.desc, e.payer, Number(e.amount).toFixed(2), per.toFixed(2), (e.participants || []).join(' | ')]);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${(state.groupName || 'splitledger').replace(/\s+/g, '_')}_expenses.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  toast('CSV exported', 'success');
+}
+
+/* ================================================================
+   EVENT WIRING
+================================================================ */
+
+// Topbar group name
+const gne = document.getElementById('groupNameEl');
+gne.addEventListener('input', debounce(() => {
+  state.groupName = gne.textContent.replace(/\u200B/g, '').trim();
+  document.getElementById('editGroupNameIn').value = state.groupName;
+  persist();
+}, 400));
+gne.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); gne.blur(); } });
+
+// Sort
+document.getElementById('sortSel').addEventListener('change', e => {
+  sortMode = e.target.value;
+  renderExpenses();
+});
+
+// Search
+document.getElementById('searchIn').addEventListener('input', debounce(e => {
+  searchQuery = e.target.value.trim();
+  renderExpenses();
+}, 200));
+
+// Add payment
+document.getElementById('openAddBtn').addEventListener('click', () => {
+  if (!state.members.length) { toast('Add at least one member first', 'error'); return; }
+  editingIdx = -1;
+  renderAddForm();
+  document.getElementById('addModalTitle').textContent = 'Add Payment';
+  document.getElementById('addModalSub').textContent = 'Record a new shared expense';
+  openModal('addOverlay');
+});
+document.getElementById('saveExpenseBtn').addEventListener('click', validateAndSave);
+document.getElementById('cancelAddBtn').addEventListener('click', () => closeModal('addOverlay'));
+document.getElementById('closeAddBtn').addEventListener('click', () => closeModal('addOverlay'));
+
+// Enter key in add form
+['descIn', 'amountIn'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); validateAndSave(); }
+  });
+});
+
+// Toggle all participants
+document.getElementById('toggleAllChips').addEventListener('click', () => {
+  const cbs = Array.from(document.querySelectorAll('#participantsGrid input[type=checkbox]'));
+  const anyUnchecked = cbs.some(c => !c.checked);
+  cbs.forEach(cb => {
+    cb.checked = anyUnchecked;
+    cb.dispatchEvent(new Event('change'));
+  });
+});
+
+// Edit group
+document.getElementById('openEditGroupBtn').addEventListener('click', () => {
+  document.getElementById('editGroupNameIn').value = state.groupName || '';
+  document.getElementById('memberErr').classList.remove('show');
+  renderMemberEditList();
+  openModal('editOverlay');
+});
+document.getElementById('closeEditBtn').addEventListener('click', () => closeModal('editOverlay'));
+
+document.getElementById('saveGroupBtn').addEventListener('click', () => {
+  const name = document.getElementById('editGroupNameIn').value.trim();
+  if (name) {
+    state.groupName = name;
+    gne.textContent = name;
+  }
+  persist(); refresh();
+  closeModal('editOverlay');
+  toast('Group saved', 'success');
+});
+
+// Add member
+function doAddMember() {
+  const inp = document.getElementById('newMemberIn');
+  if (addMember(inp.value)) {
+    inp.value = '';
+    inp.focus();
+    renderMemberEditList();
+  }
+}
+document.getElementById('addMemberBtn').addEventListener('click', doAddMember);
+document.getElementById('newMemberIn').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); doAddMember(); }
+});
+
+// Clear data
+document.getElementById('openClearBtn').addEventListener('click', () => {
+  document.getElementById('clearIn').value = '';
+  closeModal('editOverlay');
+  openModal('clearOverlay');
+});
+document.getElementById('cancelClearBtn').addEventListener('click', () => closeModal('clearOverlay'));
+document.getElementById('closeClearBtn').addEventListener('click', () => closeModal('clearOverlay'));
+document.getElementById('confirmClearBtn').addEventListener('click', () => {
+  if (document.getElementById('clearIn').value.trim().toUpperCase() === 'DELETE') {
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  } else {
+    toast('Type DELETE to confirm', 'error');
+  }
+});
+
+// Export
+document.getElementById('exportBtn').addEventListener('click', exportCsv);
+
+/* ================================================================
+   INIT
+================================================================ */
+load();
+
+// If first visit, set defaults
+if (!state.members.length && !state.groupName) {
+  state.groupName = 'My Group';
+  state.members = ['You'];
+}
+
+refresh();
+document.getElementById('editGroupNameIn').value = state.groupName || '';
+
+// Expose for debugging
+window.__sl = { state, persist };
+
+})();
+</script>
+</body>
+</html>

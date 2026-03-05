@@ -1,0 +1,1541 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Split — Expense Tracker</title>
+  <meta name="description" content="A premium expense splitting app for groups"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================
+       DESIGN TOKENS
+    ============================================================ */
+    :root {
+      --ink: #0e1c14;
+      --ink-2: #3a5045;
+      --ink-3: #7a9488;
+      --surface: #f5f2ed;
+      --surface-2: #ebe7df;
+      --surface-3: #ddd8cd;
+      --white: #fdfcfa;
+      --accent: #2d6a4f;
+      --accent-light: #52b788;
+      --accent-pale: #d8f3dc;
+      --danger: #b5362a;
+      --danger-pale: #fde8e6;
+      --warn: #d97706;
+      --warn-pale: #fef3c7;
+      --gold: #c9a84c;
+
+      --font-serif: 'DM Serif Display', Georgia, serif;
+      --font-sans: 'DM Sans', system-ui, sans-serif;
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+      --shadow-lg: 0 10px 30px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.06);
+      --shadow-xl: 0 20px 50px rgba(0,0,0,0.14), 0 8px 20px rgba(0,0,0,0.08);
+
+      --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-spring: 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* ============================================================
+       RESET & BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; scroll-behavior: smooth; }
+    body {
+      min-height: 100%;
+      font-family: var(--font-sans);
+      background: var(--surface);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    /* ============================================================
+       LAYOUT
+    ============================================================ */
+    .app-shell {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 0 16px 100px;
+    }
+
+    /* ============================================================
+       HEADER / HERO
+    ============================================================ */
+    .app-header {
+      background: var(--ink);
+      margin: 0 -16px;
+      padding: 24px 32px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .app-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 80% at 110% -10%, rgba(82,183,136,0.25) 0%, transparent 60%),
+                  radial-gradient(ellipse 50% 60% at -10% 110%, rgba(45,106,79,0.3) 0%, transparent 55%);
+      pointer-events: none;
+    }
+    .header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .header-wordmark {
+      font-family: var(--font-serif);
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent-light);
+      opacity: 0.8;
+      margin-bottom: 8px;
+    }
+    #groupName {
+      font-family: var(--font-serif);
+      font-size: clamp(1.6rem, 5vw, 2.4rem);
+      color: var(--white);
+      outline: none;
+      border: none;
+      background: transparent;
+      line-height: 1.15;
+      cursor: text;
+      border-bottom: 2px solid transparent;
+      transition: border-color var(--transition);
+      min-width: 60px;
+      max-width: 100%;
+    }
+    #groupName:empty::before {
+      content: attr(data-placeholder);
+      color: rgba(255,255,255,0.35);
+    }
+    #groupName:focus { border-bottom-color: rgba(82,183,136,0.5); outline: none; }
+
+    .header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    .icon-btn {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.8);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: background var(--transition), transform var(--transition);
+      font-size: 1rem;
+      backdrop-filter: blur(4px);
+    }
+    .icon-btn:hover { background: rgba(255,255,255,0.15); transform: scale(1.05); }
+    .icon-btn:active { transform: scale(0.96); }
+
+    .members-strip {
+      display: flex;
+      gap: 8px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px 0 4px;
+      scrollbar-width: none;
+    }
+    .members-strip::-webkit-scrollbar { display: none; }
+
+    .member-avatar {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      cursor: pointer; flex-shrink: 0;
+      transition: transform var(--transition-spring);
+    }
+    .member-avatar:hover { transform: translateY(-2px); }
+    .avatar-circle {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid rgba(255,255,255,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; font-size: 0.8125rem;
+      color: #fff;
+      text-transform: uppercase;
+    }
+    .avatar-name {
+      font-size: 0.6875rem;
+      color: rgba(255,255,255,0.65);
+      max-width: 52px;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ============================================================
+       SUMMARY STRIP
+    ============================================================ */
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .summary-card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--surface-3);
+    }
+    .summary-label {
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--ink-3);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .summary-value {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .summary-value.green { color: var(--accent); }
+    .summary-value.red { color: var(--danger); }
+
+    /* ============================================================
+       ADD BUTTON
+    ============================================================ */
+    .add-payment-btn {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-lg);
+      padding: 16px 24px;
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 14px rgba(45,106,79,0.3);
+      transition: transform var(--transition-spring), box-shadow var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .add-payment-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 60%);
+    }
+    .add-payment-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(45,106,79,0.4); }
+    .add-payment-btn:active { transform: translateY(0); }
+    .add-icon {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+
+    /* ============================================================
+       SECTION HEADINGS
+    ============================================================ */
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      color: var(--ink);
+    }
+    .section-action {
+      font-size: 0.8125rem;
+      color: var(--ink-3);
+      text-decoration: none;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: var(--font-sans);
+      display: flex; align-items: center; gap: 4px;
+      transition: color var(--transition);
+    }
+    .section-action:hover { color: var(--accent); }
+
+    /* ============================================================
+       EXPENSE CARDS
+    ============================================================ */
+    .expenses-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .expense-card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--surface-2);
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      animation: slideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      transition: box-shadow var(--transition), transform var(--transition);
+    }
+    .expense-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .expense-icon-wrap {
+      width: 44px; height: 44px;
+      border-radius: var(--radius-sm);
+      background: var(--accent-pale);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+    .expense-body { flex: 1; min-width: 0; }
+    .expense-title {
+      font-weight: 600;
+      font-size: 0.9375rem;
+      color: var(--ink);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+    .expense-meta {
+      font-size: 0.8125rem;
+      color: var(--ink-3);
+    }
+    .expense-chips {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .chip {
+      background: var(--surface);
+      border: 1px solid var(--surface-3);
+      color: var(--ink-2);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.6875rem;
+      font-weight: 500;
+    }
+    .expense-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .expense-amount {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      color: var(--ink);
+    }
+    .expense-card-actions { display: flex; gap: 6px; }
+    .card-btn {
+      width: 30px; height: 30px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--surface-3);
+      background: var(--surface);
+      color: var(--ink-3);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all var(--transition);
+    }
+    .card-btn:hover { background: var(--accent-pale); color: var(--accent); border-color: var(--accent-light); }
+    .card-btn.danger:hover { background: var(--danger-pale); color: var(--danger); border-color: var(--danger); }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--ink-3);
+    }
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .empty-title {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      color: var(--ink-2);
+      margin-bottom: 6px;
+    }
+
+    /* ============================================================
+       SETTLEMENTS
+    ============================================================ */
+    .settlement-panel {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--surface-3);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      margin-top: 24px;
+    }
+    .settlement-header {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--surface-2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .settlement-header-icon {
+      width: 32px; height: 32px;
+      border-radius: var(--radius-sm);
+      background: var(--accent-pale);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    .settlement-title {
+      font-family: var(--font-serif);
+      font-size: 1rem;
+    }
+    .settlement-list { padding: 8px 0; }
+    .settlement-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--surface);
+      animation: slideIn 0.25s ease both;
+    }
+    .settlement-row:last-child { border-bottom: none; }
+    .s-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      flex: 1;
+    }
+    .s-arrow {
+      color: var(--ink-3);
+      font-size: 0.875rem;
+    }
+    .s-amount {
+      font-family: var(--font-serif);
+      font-size: 1.05rem;
+      color: var(--accent);
+      font-weight: 400;
+    }
+    .all-settled {
+      padding: 20px;
+      text-align: center;
+      color: var(--ink-3);
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    /* ============================================================
+       MODALS
+    ============================================================ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(14,28,20,0.6);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal-panel {
+      background: var(--white);
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      padding: 28px 24px 36px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 92vh;
+      overflow-y: auto;
+      transform: translateY(40px);
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      scrollbar-width: thin;
+    }
+    .modal-overlay.open .modal-panel { transform: translateY(0); }
+
+    .modal-handle {
+      width: 40px; height: 4px;
+      border-radius: 999px;
+      background: var(--surface-3);
+      margin: 0 auto 20px;
+    }
+    .modal-title {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      margin-bottom: 6px;
+    }
+    .modal-subtitle { color: var(--ink-3); font-size: 0.875rem; margin-bottom: 20px; }
+
+    /* ============================================================
+       FORM ELEMENTS
+    ============================================================ */
+    .field { margin-bottom: 18px; }
+    .field-label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--ink-2);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .field-input,
+    .field-select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--surface-2);
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: 0.9375rem;
+      color: var(--ink);
+      background: var(--surface);
+      transition: border-color var(--transition), box-shadow var(--transition);
+      outline: none;
+      appearance: none;
+    }
+    .field-input:focus,
+    .field-select:focus {
+      border-color: var(--accent-light);
+      box-shadow: 0 0 0 3px rgba(82,183,136,0.15);
+      background: var(--white);
+    }
+    .field-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237a9488' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
+
+    .amount-row {
+      display: flex;
+      gap: 0;
+      border: 1.5px solid var(--surface-2);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .amount-row:focus-within {
+      border-color: var(--accent-light);
+      box-shadow: 0 0 0 3px rgba(82,183,136,0.15);
+    }
+    .amount-prefix {
+      padding: 12px 14px;
+      background: var(--surface-2);
+      color: var(--ink-2);
+      font-weight: 600;
+      font-size: 0.875rem;
+      display: flex; align-items: center;
+      white-space: nowrap;
+    }
+    .amount-row .field-input {
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      background: var(--surface);
+    }
+    .amount-row .field-input:focus {
+      border: none;
+      box-shadow: none;
+      background: var(--white);
+    }
+
+    .participants-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    .participant-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--surface-2);
+      cursor: pointer;
+      background: var(--surface);
+      transition: all var(--transition);
+      user-select: none;
+    }
+    .participant-chip input { display: none; }
+    .participant-check {
+      width: 18px; height: 18px;
+      border-radius: 5px;
+      border: 2px solid var(--surface-3);
+      background: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.625rem;
+      color: transparent;
+      flex-shrink: 0;
+      transition: all var(--transition);
+    }
+    .participant-name { font-size: 0.875rem; font-weight: 500; color: var(--ink); }
+    .participant-chip.checked {
+      background: var(--accent-pale);
+      border-color: var(--accent-light);
+    }
+    .participant-chip.checked .participant-check {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .participant-chip.checked .participant-name { color: var(--accent); }
+
+    /* ============================================================
+       BUTTONS
+    ============================================================ */
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 13px 20px;
+      font-family: var(--font-sans);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      width: 100%;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(45,106,79,0.25);
+    }
+    .btn-primary:hover { background: var(--accent-light); box-shadow: 0 4px 14px rgba(45,106,79,0.35); }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .btn-ghost {
+      background: var(--surface);
+      color: var(--ink-2);
+      border: 1.5px solid var(--surface-2);
+    }
+    .btn-ghost:hover { background: var(--surface-2); }
+
+    .btn-danger {
+      background: var(--danger-pale);
+      color: var(--danger);
+      border: 1.5px solid rgba(181,54,42,0.2);
+    }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+
+    .btn-row { display: flex; gap: 10px; margin-top: 4px; }
+    .btn-row .btn { flex: 1; }
+
+    /* ============================================================
+       MEMBER LIST IN EDIT
+    ============================================================ */
+    .member-edit-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      border: 1px solid var(--surface-2);
+      margin-bottom: 8px;
+      transition: box-shadow var(--transition);
+    }
+    .member-edit-row:hover { box-shadow: var(--shadow-sm); }
+    .member-edit-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.8125rem;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .member-edit-name { flex: 1; font-weight: 500; font-size: 0.9375rem; }
+    .member-remove-btn {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      border: 1px solid var(--surface-3);
+      background: var(--white);
+      color: var(--ink-3);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.875rem;
+      transition: all var(--transition);
+    }
+    .member-remove-btn:hover { background: var(--danger-pale); color: var(--danger); border-color: var(--danger); }
+
+    .add-member-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .add-member-row .field-input { flex: 1; margin: 0; }
+    .add-member-row .btn-sm {
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all var(--transition);
+    }
+    .add-member-row .btn-sm:hover { background: var(--accent-light); }
+
+    /* ============================================================
+       DIVIDER
+    ============================================================ */
+    .divider {
+      height: 1px;
+      background: var(--surface-2);
+      margin: 20px 0;
+    }
+
+    /* ============================================================
+       TOAST
+    ============================================================ */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 200;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .toast {
+      background: var(--ink);
+      color: #fff;
+      border-radius: var(--radius-md);
+      padding: 10px 18px;
+      font-size: 0.875rem;
+      box-shadow: var(--shadow-lg);
+      animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+                 toastOut 0.3s ease 2.2s both;
+      pointer-events: all;
+      max-width: 320px;
+      text-align: center;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(12px) scale(0.95); }
+    }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    .app-footer {
+      text-align: center;
+      padding: 20px;
+      color: var(--ink-3);
+      font-size: 0.8125rem;
+      border-top: 1px solid var(--surface-2);
+      margin-top: 32px;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+    ============================================================ */
+    @media (min-width: 640px) {
+      .modal-overlay { align-items: center; }
+      .modal-panel {
+        border-radius: var(--radius-xl);
+        max-height: 85vh;
+        margin: 24px;
+        box-shadow: var(--shadow-xl);
+      }
+      .app-header { margin: 0 -16px; border-radius: 0; }
+    }
+    @media (max-width: 400px) {
+      .summary-strip { grid-template-columns: 1fr 1fr; }
+      .summary-strip .summary-card:last-child { grid-column: span 2; }
+    }
+
+    .hidden { display: none !important; }
+
+    /* Emoji icon mapping for categories */
+    .icon-food::before { content: '🍽️'; }
+    .icon-travel::before { content: '✈️'; }
+    .icon-shop::before { content: '🛍️'; }
+    .icon-home::before { content: '🏠'; }
+    .icon-fun::before { content: '🎉'; }
+    .icon-health::before { content: '💊'; }
+    .icon-default::before { content: '💳'; }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     APP HEADER
+============================================================ -->
+<header class="app-header" role="banner">
+  <div class="header-row">
+    <div>
+      <div class="header-wordmark">Split ✦ Expense Tracker</div>
+      <div id="groupName" contenteditable="true" data-placeholder="Group Name" aria-label="Group name" role="textbox" aria-multiline="false" spellcheck="false"></div>
+    </div>
+    <div class="header-actions">
+      <button id="openEditBtn" class="icon-btn" aria-label="Edit group" title="Edit group">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <nav class="members-strip" id="membersStrip" aria-label="Group members"></nav>
+</header>
+
+<!-- ============================================================
+     MAIN CONTENT
+============================================================ -->
+<div class="app-shell">
+  <!-- Summary Cards -->
+  <div class="summary-strip" id="summaryStrip">
+    <div class="summary-card">
+      <div class="summary-label">Payments</div>
+      <div class="summary-value" id="statCount">0</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Total Spent</div>
+      <div class="summary-value" id="statTotal">₹0</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-label">Members</div>
+      <div class="summary-value green" id="statMembers">1</div>
+    </div>
+  </div>
+
+  <!-- Add Payment Button -->
+  <button id="openAddBtn" class="add-payment-btn" aria-label="Add a payment">
+    <span class="add-icon">+</span>
+    Add a Payment
+  </button>
+
+  <!-- Expenses -->
+  <div class="section-head">
+    <h2 class="section-title">Payments</h2>
+    <button id="downloadCsvBtn" class="section-action" aria-label="Download CSV">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export CSV
+    </button>
+  </div>
+
+  <div id="expensesList" class="expenses-list" aria-live="polite" aria-atomic="false"></div>
+
+  <!-- Settlements -->
+  <div class="settlement-panel" id="settlementPanel" style="margin-bottom: 24px;">
+    <div class="settlement-header">
+      <div class="settlement-header-icon">⚖️</div>
+      <div>
+        <div class="settlement-title">How to Settle Up</div>
+      </div>
+    </div>
+    <div id="settlementList" class="settlement-list"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     FOOTER
+============================================================ -->
+<footer class="app-footer">© 2025 premmalik.in — Built with care</footer>
+
+<!-- ============================================================
+     TOAST
+============================================================ -->
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<!-- ============================================================
+     MODAL: ADD/EDIT PAYMENT
+============================================================ -->
+<div id="addModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+  <div class="modal-panel">
+    <div class="modal-handle"></div>
+    <h2 class="modal-title" id="addModalTitle">Add Payment</h2>
+    <p class="modal-subtitle" id="addModalSubtitle">Record a new shared expense</p>
+
+    <div class="field">
+      <label class="field-label" for="payerSel">Paid by</label>
+      <select class="field-select" id="payerSel" aria-label="Payer"></select>
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="descIn">Description</label>
+      <input class="field-input" type="text" id="descIn" placeholder="e.g. Hotel booking, dinner, flights…" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label class="field-label" for="amountIn">Amount</label>
+      <div class="amount-row">
+        <div class="amount-prefix">₹</div>
+        <input class="field-input" type="number" id="amountIn" placeholder="0.00" min="0" step="0.01">
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Split between</label>
+      <div class="participants-grid" id="participantsGrid" aria-label="Select participants"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="cancelAddBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveExpenseBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Save Payment
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL: EDIT GROUP
+============================================================ -->
+<div id="editModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+  <div class="modal-panel">
+    <div class="modal-handle"></div>
+    <h2 class="modal-title" id="editModalTitle">Edit Group</h2>
+    <p class="modal-subtitle">Manage members and group settings</p>
+
+    <div class="field">
+      <label class="field-label" for="editGroupName">Group Name</label>
+      <input class="field-input" type="text" id="editGroupName" placeholder="Weekend trip, roommates…">
+    </div>
+
+    <div class="divider"></div>
+
+    <label class="field-label">Members</label>
+    <div id="editMembersList"></div>
+
+    <div class="add-member-row">
+      <input class="field-input" type="text" id="newMemberIn" placeholder="Add a member…" autocomplete="off">
+      <button class="btn-sm" id="addMemberBtn">Add</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-danger" id="openClearBtn">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        Clear All Data
+      </button>
+      <button class="btn btn-primary" id="saveGroupBtn">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL: CONFIRM CLEAR
+============================================================ -->
+<div id="clearModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="clearModalTitle">
+  <div class="modal-panel">
+    <div class="modal-handle"></div>
+    <h2 class="modal-title" id="clearModalTitle" style="color: var(--danger)">⚠️ Clear All Data?</h2>
+    <p class="modal-subtitle">This will delete all payments and members permanently. Type <strong>clear</strong> to confirm.</p>
+
+    <div class="field">
+      <input class="field-input" type="text" id="clearInput" placeholder="Type: clear" autocomplete="off">
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="cancelClearBtn">Cancel</button>
+      <button class="btn btn-danger" id="confirmClearBtn">Delete Everything</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+(() => {
+  'use strict';
+
+  // =====================================================================
+  // CONSTANTS & STATE
+  // =====================================================================
+  const STORAGE_KEY = 'split_app_v2';
+  const DAY_FORMAT = { year: 'numeric', month: 'short', day: 'numeric' };
+  const CATEGORY_ICONS = ['food', 'travel', 'shop', 'home', 'fun', 'health', 'default'];
+  const KEYWORDS = {
+    food: ['food', 'dinner', 'lunch', 'breakfast', 'restaurant', 'café', 'cafe', 'pizza', 'coffee', 'meal', 'eat', 'drinks', 'bar', 'hotel food', 'groceries', 'snack'],
+    travel: ['flight', 'train', 'bus', 'cab', 'uber', 'ola', 'taxi', 'airport', 'travel', 'transport', 'petrol', 'fuel', 'ride', 'ferry', 'metro'],
+    shop: ['shop', 'shopping', 'market', 'buy', 'purchase', 'amazon', 'clothes', 'clothes', 'gift', 'store'],
+    home: ['rent', 'home', 'house', 'electricity', 'water', 'wifi', 'internet', 'bills', 'repair', 'maintenance', 'hotel', 'airbnb', 'accommodation'],
+    fun: ['movie', 'concert', 'show', 'event', 'game', 'party', 'fun', 'entertainment', 'ticket', 'tickets'],
+    health: ['doctor', 'medicine', 'pharmacy', 'health', 'hospital', 'gym', 'fitness'],
+  };
+
+  let state = {
+    groupName: '',
+    members: ['You'],
+    expenses: [],
+  };
+
+  let editingIndex = -1;
+
+  // =====================================================================
+  // UTILITIES
+  // =====================================================================
+  const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  function debounce(fn, wait = 250) {
+    let t;
+    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+  }
+
+  function getInitials(name) {
+    return (name || '?').trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  }
+
+  function getAvatarColor(name) {
+    const colors = ['#2d6a4f', '#1b4332', '#40916c', '#52b788', '#74c69d', '#386641', '#6a994e', '#a7c957'];
+    let hash = 0;
+    for (const c of (name || '')) hash = (hash * 31 + c.charCodeAt(0)) & 0xffffffff;
+    return colors[Math.abs(hash) % colors.length];
+  }
+
+  function guessCategory(desc) {
+    const d = (desc || '').toLowerCase();
+    for (const [cat, kws] of Object.entries(KEYWORDS)) {
+      if (kws.some(kw => d.includes(kw))) return cat;
+    }
+    return 'default';
+  }
+
+  const CATEGORY_EMOJI = {
+    food: '🍽️', travel: '✈️', shop: '🛍️', home: '🏠', fun: '🎉', health: '💊', default: '💳'
+  };
+
+  // =====================================================================
+  // PERSISTENCE
+  // =====================================================================
+  function load() {
+    try {
+      const s = localStorage.getItem(STORAGE_KEY);
+      if (s) Object.assign(state, JSON.parse(s));
+    } catch (e) { console.warn('Load failed', e); }
+  }
+
+  const save = debounce(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch (e) { console.warn('Save failed', e); }
+  }, 200);
+
+  function saveNow() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch (e) { }
+  }
+
+  // =====================================================================
+  // MODAL SYSTEM
+  // =====================================================================
+  const modals = {};
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    modals[el.id] = el;
+    el.addEventListener('click', e => { if (e.target === el) closeModal(el.id); });
+  });
+
+  function openModal(id) {
+    const el = modals[id];
+    if (!el) return;
+    document.body.style.overflow = 'hidden';
+    el.classList.add('open');
+    // focus first input
+    setTimeout(() => {
+      const f = el.querySelector('input:not([type="hidden"]), select, textarea, button');
+      if (f) f.focus();
+    }, 60);
+  }
+
+  function closeModal(id) {
+    const el = modals[id];
+    if (!el) return;
+    el.classList.remove('open');
+    // check if any other modal is open
+    if (!document.querySelector('.modal-overlay.open')) {
+      document.body.style.overflow = '';
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.open').forEach(m => closeModal(m.id));
+    }
+  });
+
+  // =====================================================================
+  // TOAST
+  // =====================================================================
+  const toastContainer = document.getElementById('toastContainer');
+
+  function showToast(msg, type = 'info') {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    if (type === 'success') t.style.background = 'var(--accent)';
+    if (type === 'error') t.style.background = 'var(--danger)';
+    toastContainer.appendChild(t);
+    setTimeout(() => t.remove(), 2600);
+  }
+
+  // =====================================================================
+  // COMPUTATIONS
+  // =====================================================================
+  function computeBalances() {
+    const bal = {};
+    state.members.forEach(m => bal[m] = 0);
+    state.expenses.forEach(e => {
+      const amt = Number(e.amount) || 0;
+      const n = (e.participants || []).length || 1;
+      const share = amt / n;
+      (e.participants || []).forEach(p => { if (!(p in bal)) bal[p] = 0; bal[p] -= share; });
+      if (!(e.payer in bal)) bal[e.payer] = 0;
+      bal[e.payer] += amt;
+    });
+    Object.keys(bal).forEach(k => bal[k] = round2(bal[k]));
+    return bal;
+  }
+
+  function computeSettlements() {
+    const bal = computeBalances();
+    const creditors = [], debtors = [];
+    for (const [name, amt] of Object.entries(bal)) {
+      if (amt > 0.005) creditors.push({ name, amt });
+      else if (amt < -0.005) debtors.push({ name, amt: -amt });
+    }
+    creditors.sort((a, b) => b.amt - a.amt);
+    debtors.sort((a, b) => b.amt - a.amt);
+    const res = [];
+    while (creditors.length && debtors.length) {
+      const c = creditors[0], d = debtors[0];
+      const settle = round2(Math.min(c.amt, d.amt));
+      res.push({ from: d.name, to: c.name, amount: settle });
+      c.amt = round2(c.amt - settle);
+      d.amt = round2(d.amt - settle);
+      if (c.amt <= 0.005) creditors.shift();
+      if (d.amt <= 0.005) debtors.shift();
+    }
+    return res;
+  }
+
+  function totalSpent() {
+    return round2(state.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0));
+  }
+
+  // =====================================================================
+  // RENDERERS
+  // =====================================================================
+  function renderHeader() {
+    const gn = document.getElementById('groupName');
+    if (document.activeElement !== gn) {
+      gn.innerText = state.groupName || '';
+    }
+
+    const strip = document.getElementById('membersStrip');
+    strip.innerHTML = '';
+    state.members.forEach(m => {
+      const wrap = document.createElement('div');
+      wrap.className = 'member-avatar';
+      wrap.setAttribute('role', 'button');
+      wrap.setAttribute('tabindex', '0');
+      wrap.setAttribute('title', `Jump to ${m}'s payments`);
+      wrap.setAttribute('aria-label', `${m}`);
+
+      const circle = document.createElement('div');
+      circle.className = 'avatar-circle';
+      circle.style.background = getAvatarColor(m);
+      circle.textContent = getInitials(m);
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'avatar-name';
+      nameEl.textContent = m;
+
+      wrap.appendChild(circle);
+      wrap.appendChild(nameEl);
+      wrap.addEventListener('click', () => {
+        const card = Array.from(document.querySelectorAll('.expense-card'))
+          .find(c => c.dataset.payer === m);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      wrap.addEventListener('keydown', e => { if (e.key === 'Enter') wrap.click(); });
+      strip.appendChild(wrap);
+    });
+  }
+
+  function renderSummary() {
+    document.getElementById('statCount').textContent = state.expenses.length;
+    document.getElementById('statTotal').textContent = `₹${totalSpent().toLocaleString('en-IN')}`;
+    document.getElementById('statMembers').textContent = state.members.length;
+  }
+
+  function renderExpenses() {
+    const list = document.getElementById('expensesList');
+    list.innerHTML = '';
+
+    if (!state.expenses.length) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <span class="empty-icon">🧾</span>
+          <div class="empty-title">No payments yet</div>
+          <div>Add your first shared expense to get started</div>
+        </div>`;
+      return;
+    }
+
+    state.expenses.forEach((exp, idx) => {
+      const cat = guessCategory(exp.desc);
+      const emoji = CATEGORY_EMOJI[cat] || '💳';
+
+      const card = document.createElement('article');
+      card.className = 'expense-card';
+      card.dataset.index = idx;
+      card.dataset.payer = exp.payer;
+      card.style.animationDelay = `${Math.min(idx * 40, 200)}ms`;
+
+      card.innerHTML = `
+        <div class="expense-icon-wrap" aria-hidden="true">${emoji}</div>
+        <div class="expense-body">
+          <div class="expense-title">${esc(exp.desc)}</div>
+          <div class="expense-meta">${esc(exp.payer)} paid · ${esc(exp.date || '')}</div>
+          <div class="expense-chips">
+            ${(exp.participants || []).map(p => `<span class="chip">${esc(p)}</span>`).join('')}
+          </div>
+        </div>
+        <div class="expense-right">
+          <div class="expense-amount">₹${Number(exp.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          <div class="expense-card-actions">
+            <button class="card-btn edit-btn" data-idx="${idx}" aria-label="Edit payment" title="Edit">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="card-btn danger delete-btn" data-idx="${idx}" aria-label="Delete payment" title="Delete">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            </button>
+          </div>
+        </div>`;
+      list.appendChild(card);
+    });
+
+    // delegate events
+    list.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => openEditExpense(+btn.dataset.idx));
+    });
+    list.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteExpense(+btn.dataset.idx));
+    });
+  }
+
+  function renderSettlements() {
+    const settles = computeSettlements();
+    const list = document.getElementById('settlementList');
+    list.innerHTML = '';
+
+    if (!settles.length) {
+      list.innerHTML = `<div class="all-settled"><span>✅</span> All settled up — no debts!</div>`;
+      return;
+    }
+
+    settles.forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'settlement-row';
+      row.innerHTML = `
+        <div class="s-name">${esc(s.from)}</div>
+        <div class="s-arrow">→</div>
+        <div class="s-name">${esc(s.to)}</div>
+        <div class="s-amount">₹${s.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>`;
+      list.appendChild(row);
+    });
+  }
+
+  function renderEditMembersList() {
+    const container = document.getElementById('editMembersList');
+    container.innerHTML = '';
+    state.members.forEach(m => {
+      const row = document.createElement('div');
+      row.className = 'member-edit-row';
+      row.innerHTML = `
+        <div class="member-edit-avatar" style="background: ${getAvatarColor(m)}">${getInitials(m)}</div>
+        <div class="member-edit-name">${esc(m)}</div>
+        <button class="member-remove-btn" data-name="${esc(m)}" aria-label="Remove ${esc(m)}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>`;
+      container.appendChild(row);
+    });
+    container.querySelectorAll('.member-remove-btn').forEach(btn => {
+      btn.addEventListener('click', () => removeMember(btn.dataset.name));
+    });
+  }
+
+  function renderAddForm(expenseToEdit = null) {
+    // Payer select
+    const payerSel = document.getElementById('payerSel');
+    payerSel.innerHTML = '';
+    state.members.forEach(m => {
+      const o = document.createElement('option');
+      o.value = m; o.textContent = m;
+      payerSel.appendChild(o);
+    });
+
+    // Participants grid
+    const grid = document.getElementById('participantsGrid');
+    grid.innerHTML = '';
+    state.members.forEach(m => {
+      const lbl = document.createElement('label');
+      lbl.className = 'participant-chip';
+      lbl.setAttribute('tabindex', '0');
+
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.value = m;
+      cb.checked = expenseToEdit ? expenseToEdit.participants.includes(m) : true;
+
+      const check = document.createElement('div');
+      check.className = 'participant-check';
+      check.innerHTML = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+      const name = document.createElement('div');
+      name.className = 'participant-name';
+      name.textContent = m;
+
+      lbl.appendChild(cb); lbl.appendChild(check); lbl.appendChild(name);
+
+      const updateCheck = () => lbl.classList.toggle('checked', cb.checked);
+      cb.addEventListener('change', updateCheck);
+      lbl.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); } });
+      updateCheck();
+
+      grid.appendChild(lbl);
+    });
+
+    // Fill values
+    if (expenseToEdit) {
+      payerSel.value = expenseToEdit.payer;
+      document.getElementById('descIn').value = expenseToEdit.desc;
+      document.getElementById('amountIn').value = expenseToEdit.amount;
+    } else {
+      document.getElementById('descIn').value = '';
+      document.getElementById('amountIn').value = '';
+    }
+  }
+
+  function refreshAll() {
+    renderHeader();
+    renderSummary();
+    renderExpenses();
+    renderSettlements();
+    renderEditMembersList();
+  }
+
+  // =====================================================================
+  // ACTIONS
+  // =====================================================================
+  function addMember(name) {
+    name = String(name).trim();
+    if (!name) { showToast('Please enter a name', 'error'); return false; }
+    if (state.members.map(m => m.toLowerCase()).includes(name.toLowerCase())) {
+      showToast(`"${name}" is already a member`, 'error');
+      return false;
+    }
+    state.members.push(name);
+    save(); refreshAll();
+    showToast(`${name} added!`, 'success');
+    return true;
+  }
+
+  function removeMember(name) {
+    if (state.members.length <= 1) { showToast('Group needs at least one member', 'error'); return; }
+    if (!confirm(`Remove "${name}" from this group?`)) return;
+    state.members = state.members.filter(m => m !== name);
+    state.expenses = state.expenses.map(e => ({
+      ...e,
+      participants: e.participants.filter(p => p !== name),
+      payer: e.payer === name ? (state.members[0] || 'You') : e.payer,
+    }));
+    save(); refreshAll();
+    showToast(`${name} removed`, 'info');
+  }
+
+  function saveExpense() {
+    const payer = document.getElementById('payerSel').value;
+    const desc = document.getElementById('descIn').value.trim();
+    const amount = Number(document.getElementById('amountIn').value);
+    const participants = Array.from(document.querySelectorAll('#participantsGrid input:checked')).map(i => i.value);
+
+    if (!desc) { showToast('Please enter a description', 'error'); document.getElementById('descIn').focus(); return; }
+    if (!amount || amount <= 0) { showToast('Please enter a valid amount', 'error'); document.getElementById('amountIn').focus(); return; }
+    if (!participants.length) { showToast('Select at least one participant', 'error'); return; }
+
+    const expense = {
+      payer, desc, amount: round2(amount), participants,
+      date: new Date().toLocaleDateString(undefined, DAY_FORMAT),
+    };
+
+    if (editingIndex >= 0) {
+      expense.date = state.expenses[editingIndex].date; // preserve original date
+      state.expenses[editingIndex] = expense;
+      editingIndex = -1;
+      showToast('Payment updated', 'success');
+    } else {
+      state.expenses.unshift(expense);
+      showToast('Payment saved!', 'success');
+    }
+
+    save(); refreshAll();
+    closeModal('addModal');
+  }
+
+  function openEditExpense(idx) {
+    const exp = state.expenses[idx];
+    if (!exp) return;
+    editingIndex = idx;
+    renderAddForm(exp);
+    document.getElementById('addModalTitle').textContent = 'Edit Payment';
+    document.getElementById('addModalSubtitle').textContent = 'Update the payment details';
+    openModal('addModal');
+  }
+
+  function deleteExpense(idx) {
+    if (!confirm('Delete this payment?')) return;
+    state.expenses.splice(idx, 1);
+    save(); refreshAll();
+    showToast('Payment deleted', 'info');
+  }
+
+  function exportCsv() {
+    if (!state.expenses.length) { showToast('No payments to export', 'error'); return; }
+    const rows = [['Date', 'Paid By', 'Description', 'Amount (₹)', 'Split Between']];
+    state.expenses.forEach(e => {
+      rows.push([e.date, e.payer, e.desc, Number(e.amount).toFixed(2), (e.participants || []).join(' | ')]);
+    });
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(state.groupName || 'split').replace(/\s+/g, '_')}_expenses.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    showToast('CSV downloaded!', 'success');
+  }
+
+  // =====================================================================
+  // EVENT WIRING
+  // =====================================================================
+
+  // Header: group name edit
+  const groupNameEl = document.getElementById('groupName');
+  groupNameEl.addEventListener('input', debounce(() => {
+    state.groupName = groupNameEl.innerText.replace(/\u200B/g, '').trim();
+    document.getElementById('editGroupName').value = state.groupName;
+    save();
+  }, 400));
+  groupNameEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); groupNameEl.blur(); } });
+
+  // Open Add Modal
+  document.getElementById('openAddBtn').addEventListener('click', () => {
+    editingIndex = -1;
+    renderAddForm();
+    document.getElementById('addModalTitle').textContent = 'Add Payment';
+    document.getElementById('addModalSubtitle').textContent = 'Record a new shared expense';
+    openModal('addModal');
+  });
+
+  // Save expense
+  document.getElementById('saveExpenseBtn').addEventListener('click', saveExpense);
+  document.getElementById('cancelAddBtn').addEventListener('click', () => closeModal('addModal'));
+
+  // Edit modal
+  document.getElementById('openEditBtn').addEventListener('click', () => {
+    document.getElementById('editGroupName').value = state.groupName || '';
+    renderEditMembersList();
+    openModal('editModal');
+  });
+
+  document.getElementById('saveGroupBtn').addEventListener('click', () => {
+    const name = document.getElementById('editGroupName').value.trim();
+    if (name) {
+      state.groupName = name;
+      groupNameEl.innerText = name;
+    }
+    save(); refreshAll();
+    closeModal('editModal');
+    showToast('Group saved!', 'success');
+  });
+
+  // Add member
+  function handleAddMember() {
+    const input = document.getElementById('newMemberIn');
+    if (addMember(input.value)) {
+      input.value = '';
+      renderEditMembersList();
+    }
+  }
+  document.getElementById('addMemberBtn').addEventListener('click', handleAddMember);
+  document.getElementById('newMemberIn').addEventListener('keydown', e => { if (e.key === 'Enter') handleAddMember(); });
+
+  // Clear data
+  document.getElementById('openClearBtn').addEventListener('click', () => {
+    closeModal('editModal');
+    document.getElementById('clearInput').value = '';
+    openModal('clearModal');
+  });
+  document.getElementById('cancelClearBtn').addEventListener('click', () => closeModal('clearModal'));
+  document.getElementById('confirmClearBtn').addEventListener('click', () => {
+    if (document.getElementById('clearInput').value.trim().toLowerCase() === 'clear') {
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    } else {
+      showToast('Type "clear" to confirm', 'error');
+    }
+  });
+
+  // CSV export
+  document.getElementById('downloadCsvBtn').addEventListener('click', exportCsv);
+
+  // =====================================================================
+  // INIT
+  // =====================================================================
+  load();
+  refreshAll();
+
+  // expose for debugging
+  window.__split = { state, save: saveNow };
+})();
+</script>
+</body>
+</html>

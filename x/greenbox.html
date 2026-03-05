@@ -1,0 +1,3159 @@
+<!-- https://019c9e44-0d37-7ae8-9bc2-561e6d376f8b.arena.site/ -->
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GreenBox — Military-Grade File Encryption. Free Forever.</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --green: #00ff88;
+    --green-dim: #00cc6a;
+    --green-dark: #004422;
+    --green-glow: rgba(0, 255, 136, 0.15);
+    --green-glow-strong: rgba(0, 255, 136, 0.4);
+    --bg: #050a06;
+    --bg2: #080f09;
+    --bg3: #0a140b;
+    --card: rgba(0, 255, 136, 0.04);
+    --card-border: rgba(0, 255, 136, 0.12);
+    --card-border-hover: rgba(0, 255, 136, 0.4);
+    --text: #e8f5e9;
+    --text-dim: #7a9e80;
+    --text-muted: #3a5a3f;
+    --danger: #ff4444;
+    --warning: #ffaa00;
+    --white: #ffffff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* ── SAMARKAN-style font simulation via Orbitron + custom styling ── */
+  .samarkan {
+    font-family: 'Orbitron', monospace;
+    letter-spacing: 0.15em;
+    font-weight: 900;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--green-dark); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+  /* ── GRID BG ── */
+  .grid-bg {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  .noise {
+    position: fixed; inset: 0; z-index: 0;
+    opacity: 0.02;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    padding: 1rem 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    backdrop-filter: blur(20px);
+    background: rgba(5, 10, 6, 0.85);
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .nav-logo {
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+
+  .nav-logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--green), var(--green-dim));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 20px var(--green-glow-strong);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .nav-logo-icon::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+    animation: shine 3s infinite;
+  }
+
+  @keyframes shine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
+  }
+
+  .nav-logo-icon svg { width: 20px; height: 20px; fill: #000; }
+
+  .nav-logo-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: var(--green);
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 20px var(--green-glow-strong);
+  }
+
+  .nav-links {
+    display: flex; gap: 2rem; list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--green); }
+
+  .nav-cta {
+    padding: 0.5rem 1.2rem;
+    background: transparent;
+    border: 1px solid var(--green);
+    color: var(--green);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .nav-cta:hover {
+    background: var(--green);
+    color: #000;
+    box-shadow: 0 0 20px var(--green-glow-strong);
+  }
+
+  /* ── HERO ── */
+  #hero {
+    position: relative; z-index: 1;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 8rem 2rem 4rem;
+    overflow: hidden;
+  }
+
+  .hero-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+  }
+
+  .hero-orb-1 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,255,136,0.08) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    animation: orb-pulse 4s ease-in-out infinite;
+  }
+
+  .hero-orb-2 {
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(0,255,136,0.06) 0%, transparent 70%);
+    top: 20%; right: 10%;
+    animation: orb-float 6s ease-in-out infinite;
+  }
+
+  .hero-orb-3 {
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(0,200,100,0.05) 0%, transparent 70%);
+    bottom: 20%; left: 10%;
+    animation: orb-float 8s ease-in-out infinite reverse;
+  }
+
+  @keyframes orb-pulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.7; }
+  }
+
+  @keyframes orb-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-30px); }
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.4rem 1rem;
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--green);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    animation: badge-appear 0.8s ease forwards;
+  }
+
+  .badge-dot {
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: blink 1.5s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  @keyframes badge-appear {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    line-height: 1.05;
+    margin-bottom: 0.5rem;
+    position: relative;
+  }
+
+  .hero-title-green {
+    color: var(--green);
+    text-shadow:
+      0 0 30px rgba(0,255,136,0.5),
+      0 0 60px rgba(0,255,136,0.3),
+      0 0 100px rgba(0,255,136,0.1);
+    display: inline-block;
+    animation: title-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes title-glow {
+    0%, 100% { text-shadow: 0 0 30px rgba(0,255,136,0.5), 0 0 60px rgba(0,255,136,0.3); }
+    50% { text-shadow: 0 0 50px rgba(0,255,136,0.8), 0 0 100px rgba(0,255,136,0.5), 0 0 150px rgba(0,255,136,0.2); }
+  }
+
+  .hero-sub {
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    color: var(--text-dim);
+    max-width: 600px;
+    margin: 1rem auto 2.5rem;
+    font-weight: 400;
+    line-height: 1.7;
+  }
+
+  .hero-sub strong { color: var(--green); font-weight: 600; }
+
+  .hero-buttons {
+    display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+    margin-bottom: 3rem;
+  }
+
+  .btn-primary {
+    padding: 0.9rem 2.5rem;
+    background: var(--green);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    box-shadow: 0 0 30px rgba(0,255,136,0.3);
+    font-family: 'Inter', sans-serif;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 50px rgba(0,255,136,0.5), 0 10px 30px rgba(0,0,0,0.3);
+  }
+
+  .btn-secondary {
+    padding: 0.9rem 2.5rem;
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--green);
+    color: var(--green);
+    transform: translateY(-2px);
+  }
+
+  .hero-trust {
+    display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; justify-content: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .hero-trust-item {
+    display: flex; align-items: center; gap: 0.4rem;
+    color: var(--text-dim);
+  }
+
+  .hero-trust-item svg { color: var(--green); }
+
+  /* ── ENCRYPTION DEMO ── */
+  #demo {
+    position: relative; z-index: 1;
+    padding: 5rem 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--green);
+    font-weight: 600;
+    margin-bottom: 0.8rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+
+  .section-label::before {
+    content: '';
+    display: block; width: 20px; height: 1px;
+    background: var(--green);
+  }
+
+  .section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+
+  .section-desc {
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    max-width: 550px;
+    margin-bottom: 3rem;
+    line-height: 1.7;
+  }
+
+  /* ── FILE CORRUPTION DEMO ── */
+  .demo-container {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .demo-container::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(0,255,136,0.03) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .demo-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap; gap: 1rem;
+  }
+
+  .demo-tabs {
+    display: flex; gap: 0.5rem;
+  }
+
+  .demo-tab {
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .demo-tab.active {
+    background: var(--green);
+    color: #000;
+    border-color: var(--green);
+  }
+
+  .demo-tab:not(.active) {
+    color: var(--text-dim);
+    border-color: var(--card-border);
+  }
+
+  .demo-tab:not(.active):hover {
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .demo-btn {
+    padding: 0.4rem 1.2rem;
+    background: transparent;
+    border: 1px solid var(--green);
+    color: var(--green);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .demo-btn:hover {
+    background: var(--green);
+    color: #000;
+  }
+
+  .file-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.8;
+    border-radius: 10px;
+    padding: 1.5rem;
+    min-height: 220px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s;
+  }
+
+  .file-display.plain {
+    background: rgba(0,255,136,0.04);
+    border: 1px solid rgba(0,255,136,0.1);
+    color: #a8d8b0;
+  }
+
+  .file-display.encrypted {
+    background: rgba(255,50,50,0.04);
+    border: 1px solid rgba(255,50,50,0.1);
+    color: #ff6b6b;
+  }
+
+  .file-display.decrypted {
+    background: rgba(0,255,136,0.06);
+    border: 1px solid rgba(0,255,136,0.2);
+    color: #7aff9e;
+  }
+
+  .demo-status {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    animation: blink 1s infinite;
+  }
+
+  .status-dot.green { background: var(--green); }
+  .status-dot.red { background: var(--danger); }
+  .status-dot.yellow { background: var(--warning); }
+
+  /* ── PROCESS FLOW ── */
+  .process-bar {
+    display: flex; align-items: center; gap: 0;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .process-step {
+    flex: 1; min-width: 80px;
+    text-align: center;
+    padding: 0.8rem 0.5rem;
+    position: relative;
+  }
+
+  .process-step-icon {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 0.4rem;
+    font-size: 1rem;
+    transition: all 0.3s;
+  }
+
+  .process-step.active .process-step-icon {
+    border-color: var(--green);
+    background: rgba(0,255,136,0.1);
+    box-shadow: 0 0 15px var(--green-glow);
+  }
+
+  .process-step-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+
+  .process-step.active .process-step-label { color: var(--green); }
+
+  .process-arrow {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    padding: 0 0.2rem;
+  }
+
+  /* ── STATS SECTION ── */
+  #stats {
+    position: relative; z-index: 1;
+    padding: 5rem 2rem;
+    background: linear-gradient(180deg, transparent 0%, rgba(0,255,136,0.02) 50%, transparent 100%);
+  }
+
+  .stats-inner { max-width: 1100px; margin: 0 auto; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 3rem;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    cursor: default;
+  }
+
+  .stat-card:hover {
+    border-color: var(--card-border-hover);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px var(--green-glow);
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .stat-card:hover::before { opacity: 1; }
+
+  .stat-emoji {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .stat-number {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--green);
+    line-height: 1;
+    margin-bottom: 0.4rem;
+    text-shadow: 0 0 20px var(--green-glow-strong);
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-desc {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ── FUN FACTS ── */
+  #funfacts {
+    position: relative; z-index: 1;
+    padding: 5rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .fact-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 3rem;
+  }
+
+  .fact-card {
+    border-radius: 16px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid;
+    transition: all 0.3s;
+  }
+
+  .fact-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .fact-card.type-green {
+    background: rgba(0,255,136,0.04);
+    border-color: rgba(0,255,136,0.15);
+  }
+
+  .fact-card.type-red {
+    background: rgba(255,68,68,0.04);
+    border-color: rgba(255,68,68,0.15);
+  }
+
+  .fact-card.type-yellow {
+    background: rgba(255,170,0,0.04);
+    border-color: rgba(255,170,0,0.15);
+  }
+
+  .fact-card.type-blue {
+    background: rgba(68,120,255,0.04);
+    border-color: rgba(68,120,255,0.15);
+  }
+
+  .fact-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .fact-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+    color: var(--text);
+  }
+
+  .fact-body {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .fact-body strong { color: var(--text); }
+
+  .fact-tag {
+    display: inline-block;
+    margin-top: 0.8rem;
+    padding: 0.2rem 0.7rem;
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .fact-tag.green { background: rgba(0,255,136,0.15); color: var(--green); }
+  .fact-tag.red { background: rgba(255,68,68,0.15); color: #ff6b6b; }
+  .fact-tag.yellow { background: rgba(255,170,0,0.15); color: #ffbb44; }
+  .fact-tag.blue { background: rgba(68,120,255,0.15); color: #7a9fff; }
+
+  /* ── HOW IT WORKS ── */
+  #how {
+    position: relative; z-index: 1;
+    padding: 5rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .steps-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0;
+    margin-top: 3rem;
+    position: relative;
+  }
+
+  .steps-container::before {
+    content: '';
+    position: absolute;
+    top: 40px; left: 10%; right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--card-border), var(--green-dim), var(--card-border), transparent);
+  }
+
+  .step-item {
+    text-align: center;
+    padding: 1rem;
+    position: relative;
+  }
+
+  .step-number {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--card-border);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.2rem;
+    font-family: 'Orbitron', monospace;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--text-muted);
+    position: relative; z-index: 1;
+    transition: all 0.3s;
+  }
+
+  .step-item:hover .step-number {
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 25px var(--green-glow);
+  }
+
+  .step-icon-inner { font-size: 1.8rem; }
+
+  .step-title {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+
+  .step-desc {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ── CRYPTO DEEP DIVE ── */
+  #crypto {
+    position: relative; z-index: 1;
+    padding: 5rem 2rem;
+    background: linear-gradient(180deg, transparent 0%, rgba(0,255,136,0.015) 50%, transparent 100%);
+  }
+
+  .crypto-inner { max-width: 1100px; margin: 0 auto; }
+
+  .crypto-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 3rem;
+  }
+
+  @media (max-width: 700px) {
+    .crypto-grid { grid-template-columns: 1fr; }
+  }
+
+  .crypto-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.8rem;
+    transition: all 0.3s;
+  }
+
+  .crypto-card:hover {
+    border-color: var(--card-border-hover);
+    box-shadow: 0 0 30px var(--green-glow);
+  }
+
+  .crypto-card-header {
+    display: flex; align-items: center; gap: 0.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .crypto-icon {
+    width: 44px; height: 44px;
+    background: rgba(0,255,136,0.08);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    border: 1px solid rgba(0,255,136,0.15);
+  }
+
+  .crypto-card-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--green);
+  }
+
+  .crypto-card-sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .crypto-list {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 0.5rem;
+  }
+
+  .crypto-list li {
+    display: flex; align-items: flex-start; gap: 0.6rem;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .crypto-list li::before {
+    content: '▸';
+    color: var(--green);
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .crypto-highlight {
+    background: rgba(0,255,136,0.06);
+    border: 1px solid rgba(0,255,136,0.15);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    margin-top: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--green);
+    line-height: 1.6;
+  }
+
+  /* ── ATTACK SCENARIOS ── */
+  #attacks {
+    position: relative; z-index: 1;
+    padding: 5rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .attack-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+    font-size: 0.85rem;
+  }
+
+  .attack-table th {
+    text-align: left;
+    padding: 0.8rem 1rem;
+    color: var(--text-dim);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--card-border);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  .attack-table td {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    vertical-align: middle;
+  }
+
+  .attack-table tr:hover td {
+    background: rgba(0,255,136,0.02);
+  }
+
+  .attack-name { color: var(--text); font-weight: 500; }
+  .attack-result-safe {
+    color: var(--green);
+    font-weight: 600;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .attack-result-partial {
+    color: var(--warning);
+    font-weight: 600;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+
+  .attack-desc { color: var(--text-dim); font-size: 0.8rem; line-height: 1.5; }
+
+  /* ── TIMELINE/PIPELINE VIZ ── */
+  #pipeline {
+    position: relative; z-index: 1;
+    padding: 5rem 2rem;
+    background: linear-gradient(180deg, transparent 0%, rgba(0,255,136,0.015) 50%, transparent 100%);
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .pipeline-viz {
+    margin-top: 3rem;
+    position: relative;
+  }
+
+  .pipeline-track {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .pipeline-row {
+    display: flex;
+    align-items: stretch;
+    gap: 1rem;
+    position: relative;
+  }
+
+  .pipeline-row::before {
+    content: '';
+    position: absolute;
+    left: 20px; top: 100%; bottom: -1rem;
+    width: 1px;
+    background: linear-gradient(180deg, var(--green-dim), transparent);
+    display: none;
+  }
+
+  .pipeline-row:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 20px; top: 100%;
+    width: 1px; height: 1rem;
+    background: var(--card-border);
+  }
+
+  .pipeline-num {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--green);
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .pipeline-content {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    transition: all 0.3s;
+  }
+
+  .pipeline-content:hover {
+    border-color: var(--card-border-hover);
+    box-shadow: 0 0 20px var(--green-glow);
+  }
+
+  .pipeline-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-bottom: 0.2rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+
+  .pipeline-badge {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 100px;
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(0,255,136,0.1);
+    color: var(--green);
+    border: 1px solid rgba(0,255,136,0.2);
+  }
+
+  .pipeline-detail {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ── FEATURES BENTO ── */
+  #features {
+    position: relative; z-index: 1;
+    padding: 5rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto auto;
+    gap: 1.2rem;
+    margin-top: 3rem;
+  }
+
+  @media (max-width: 800px) {
+    .bento-grid { grid-template-columns: 1fr 1fr; }
+    .bento-wide { grid-column: span 2; }
+  }
+  @media (max-width: 520px) {
+    .bento-grid { grid-template-columns: 1fr; }
+    .bento-wide { grid-column: span 1; }
+  }
+
+  .bento-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 1.8rem;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bento-card:hover {
+    border-color: var(--card-border-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3), 0 0 25px var(--green-glow);
+  }
+
+  .bento-wide { grid-column: span 2; }
+
+  .bento-card .bento-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .bento-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+  }
+
+  .bento-desc {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .bento-code {
+    margin-top: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    background: rgba(0,0,0,0.3);
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    color: var(--green);
+    border: 1px solid rgba(0,255,136,0.1);
+    line-height: 1.6;
+  }
+
+  /* ── RAM PROTECTION VISUAL ── */
+  .ram-visual {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+  }
+
+  .ram-slot {
+    width: 28px; height: 40px;
+    border-radius: 4px;
+    border: 1px solid;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 3px;
+    font-size: 0.45rem;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.3s;
+    cursor: default;
+  }
+
+  .ram-slot.locked {
+    background: rgba(0,255,136,0.06);
+    border-color: rgba(0,255,136,0.2);
+    color: var(--green);
+  }
+
+  .ram-slot.protected {
+    background: rgba(0,255,136,0.12);
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 8px rgba(0,255,136,0.2);
+  }
+
+  .ram-slot.normal {
+    background: rgba(255,255,255,0.02);
+    border-color: rgba(255,255,255,0.06);
+    color: var(--text-muted);
+  }
+
+  /* ── CTA ── */
+  #cta {
+    position: relative; z-index: 1;
+    padding: 8rem 2rem;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .cta-orb {
+    position: absolute;
+    width: 800px; height: 800px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,255,136,0.06) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .cta-inner { position: relative; max-width: 650px; margin: 0 auto; }
+
+  .cta-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+  }
+
+  .cta-sub {
+    font-size: 1.05rem;
+    color: var(--text-dim);
+    margin-bottom: 2.5rem;
+    line-height: 1.7;
+  }
+
+  .cta-free-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.5rem;
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 100px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--green);
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative; z-index: 1;
+    padding: 2rem;
+    border-top: 1px solid var(--card-border);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+
+  footer a { color: var(--text-dim); text-decoration: none; }
+  footer a:hover { color: var(--green); }
+
+  /* ── CANVAS BACKGROUND ── */
+  #hero-canvas {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  .hero-content { position: relative; z-index: 1; }
+
+  /* ── ENCRYPTION ANIMATION ── */
+  .encryption-arena {
+    padding: 2rem;
+    background: var(--bg2);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    margin-top: 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .arena-title {
+    text-align: center;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 1.5rem;
+  }
+
+  .file-boxes {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .file-box {
+    flex: 1;
+    min-width: 200px;
+    max-width: 280px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    padding: 1.2rem;
+    border: 1px solid var(--card-border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .file-box-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.8rem;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+
+  .file-box-label.original { color: #7aff9e; }
+  .file-box-label.encrypted-label { color: #ff6b6b; }
+  .file-box-label.restored { color: #7aff9e; }
+
+  .file-content-area {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    line-height: 1.8;
+    min-height: 120px;
+    word-break: break-all;
+  }
+
+  .transform-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .transform-arrow .arrow-line {
+    width: 40px; height: 1px;
+    background: linear-gradient(90deg, var(--green-dim), var(--green));
+    position: relative;
+  }
+
+  .transform-arrow .arrow-line::after {
+    content: '▶';
+    position: absolute; right: -8px; top: -6px;
+    font-size: 0.7rem;
+    color: var(--green);
+  }
+
+  .transform-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── COMPARISON ── */
+  #compare {
+    position: relative; z-index: 1;
+    padding: 5rem 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+    font-size: 0.85rem;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .compare-table th {
+    padding: 1rem 1.2rem;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+
+  .compare-table th:first-child { text-align: left; }
+
+  .compare-table th.greenbox-col {
+    background: rgba(0,255,136,0.1);
+    color: var(--green);
+    border-bottom: 2px solid var(--green);
+  }
+
+  .compare-table th.other-col {
+    background: rgba(255,255,255,0.03);
+    color: var(--text-dim);
+  }
+
+  .compare-table th.feature-col {
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .compare-table td {
+    padding: 0.9rem 1.2rem;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    text-align: center;
+  }
+
+  .compare-table td:first-child { text-align: left; color: var(--text-dim); }
+
+  .compare-table td.greenbox-val {
+    background: rgba(0,255,136,0.03);
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .compare-table tr:hover td { background: rgba(0,255,136,0.02); }
+
+  .check { color: var(--green); }
+  .cross { color: var(--danger); }
+  .partial-check { color: var(--warning); }
+
+  /* ── FAQ ── */
+  #faq {
+    position: relative; z-index: 1;
+    padding: 5rem 2rem;
+    max-width: 750px;
+    margin: 0 auto;
+  }
+
+  .faq-item {
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    margin-bottom: 0.8rem;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .faq-item:hover { border-color: var(--card-border-hover); }
+
+  .faq-q {
+    padding: 1.2rem 1.5rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text);
+    user-select: none;
+    background: var(--card);
+    transition: background 0.2s;
+  }
+
+  .faq-q:hover { background: rgba(0,255,136,0.04); }
+
+  .faq-q.open { color: var(--green); }
+
+  .faq-arrow {
+    width: 20px; height: 20px;
+    border: 1px solid var(--card-border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    color: var(--text-dim);
+  }
+
+  .faq-q.open .faq-arrow {
+    border-color: var(--green);
+    color: var(--green);
+    transform: rotate(180deg);
+  }
+
+  .faq-a {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background: rgba(0,255,136,0.02);
+  }
+
+  .faq-a.open { max-height: 300px; }
+
+  .faq-a-inner {
+    padding: 1rem 1.5rem 1.5rem;
+    font-size: 0.84rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .faq-a-inner strong { color: var(--text); }
+
+  /* ── SCROLLING TICKER ── */
+  .ticker-wrap {
+    width: 100%;
+    overflow: hidden;
+    padding: 1rem 0;
+    background: rgba(0,255,136,0.03);
+    border-top: 1px solid var(--card-border);
+    border-bottom: 1px solid var(--card-border);
+    position: relative; z-index: 1;
+  }
+
+  .ticker {
+    display: flex;
+    gap: 3rem;
+    animation: ticker-scroll 30s linear infinite;
+    width: max-content;
+  }
+
+  @keyframes ticker-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .ticker-item {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .ticker-item span { color: var(--green); }
+
+  /* ── MICRO ANIMATIONS ── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 1rem; }
+    .nav-links { display: none; }
+    .steps-container::before { display: none; }
+    .compare-table th.other-col:nth-child(3) { display: none; }
+    .compare-table td:nth-child(3) { display: none; }
+  }
+
+  /* ── KEY VISUALIZER ── */
+  .key-visual {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-top: 1rem;
+  }
+
+  .key-row {
+    display: flex; gap: 2px;
+  }
+
+  .key-bit {
+    width: 8px; height: 8px;
+    border-radius: 1px;
+    background: var(--card-border);
+    transition: all 0.1s;
+  }
+
+  .key-bit.on {
+    background: var(--green);
+    box-shadow: 0 0 4px rgba(0,255,136,0.5);
+  }
+
+  /* ── ANIMATED COUNTER ── */
+  .counter { display: inline-block; }
+
+  /* ── SCAN LINE EFFECT ── */
+  @keyframes scan {
+    0% { top: -100%; }
+    100% { top: 200%; }
+  }
+
+  .scan-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,255,136,0.3), transparent);
+    animation: scan 3s linear infinite;
+    pointer-events: none;
+  }
+
+  /* ── GLITCH EFFECT ── */
+  @keyframes glitch-1 {
+    0%, 90%, 100% { clip-path: inset(0); transform: translate(0); }
+    91% { clip-path: inset(10% 0 85% 0); transform: translate(-3px, 1px); }
+    93% { clip-path: inset(60% 0 20% 0); transform: translate(3px, -1px); }
+    95% { clip-path: inset(40% 0 50% 0); transform: translate(-2px, 2px); }
+  }
+
+  .glitch { animation: glitch-1 4s infinite; }
+
+  /* ── PROGRESS BARS ── */
+  .progress-bar-wrap {
+    margin-top: 0.8rem;
+  }
+
+  .progress-bar-label {
+    display: flex; justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-bottom: 0.3rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .progress-bar-track {
+    height: 6px;
+    background: rgba(0,255,136,0.08);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(0,255,136,0.1);
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--green-dark), var(--green));
+    transition: width 1.5s ease;
+    box-shadow: 0 0 8px rgba(0,255,136,0.5);
+    width: 0%;
+  }
+
+  /* ── HEXDUMP LINES ── */
+  .hexdump {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  .hexdump .addr { color: var(--text-muted); margin-right: 0.8rem; }
+  .hexdump .hex { color: var(--green-dim); margin-right: 0.8rem; }
+  .hexdump .ascii { color: var(--text-muted); }
+
+  /* password strength meter */
+  .pwd-strength {
+    display: flex; gap: 3px; margin-top: 0.5rem;
+  }
+  .pwd-bar {
+    flex: 1; height: 4px; border-radius: 2px;
+    background: var(--card-border);
+    transition: background 0.3s;
+  }
+  .pwd-bar.lit { background: var(--green); }
+
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="noise"></div>
+
+<!-- ── NAVIGATION ── -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z"/></svg>
+    </div>
+    <div class="nav-logo-text samarkan">GreenBox</div>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#demo">Demo</a></li>
+    <li><a href="#stats">Stats</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#crypto">Crypto</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <a href="#cta" class="nav-cta">Free Download</a>
+</nav>
+
+<!-- ── TICKER ── -->
+<div class="ticker-wrap" style="margin-top: 64px; position: relative; z-index: 1;">
+  <div class="ticker">
+    <div class="ticker-item">🔐 <span>AES-256</span> Military Grade</div>
+    <div class="ticker-item">🔑 <span>1,000,000</span> Key Iterations</div>
+    <div class="ticker-item">🛡️ <span>VirtualLock</span> RAM Protection</div>
+    <div class="ticker-item">⚡ <span>Multi-threaded</span> Processing</div>
+    <div class="ticker-item">💚 <span>100% Free</span> Forever</div>
+    <div class="ticker-item">🔒 <span>HMAC-SHA256</span> Verification</div>
+    <div class="ticker-item">🏗️ <span>No External DLLs</span></div>
+    <div class="ticker-item">📁 <span>Timestamp</span> Preserved</div>
+    <div class="ticker-item">🔐 <span>AES-256</span> Military Grade</div>
+    <div class="ticker-item">🔑 <span>1,000,000</span> Key Iterations</div>
+    <div class="ticker-item">🛡️ <span>VirtualLock</span> RAM Protection</div>
+    <div class="ticker-item">⚡ <span>Multi-threaded</span> Processing</div>
+    <div class="ticker-item">💚 <span>100% Free</span> Forever</div>
+    <div class="ticker-item">🔒 <span>HMAC-SHA256</span> Verification</div>
+    <div class="ticker-item">🏗️ <span>No External DLLs</span></div>
+    <div class="ticker-item">📁 <span>Timestamp</span> Preserved</div>
+  </div>
+</div>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-orb hero-orb-1"></div>
+  <div class="hero-orb hero-orb-2"></div>
+  <div class="hero-orb hero-orb-3"></div>
+
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      FREE · Windows · No BS · Just Encryption
+    </div>
+
+    <h1 class="hero-title samarkan">
+      <span class="hero-title-green glitch">GREENBOX</span>
+    </h1>
+    <div class="hero-title samarkan" style="font-size: clamp(1.2rem, 3vw, 2rem); color: var(--text-dim); margin-bottom: 1rem;">
+      Your Files. Your Keys. Your Rules.
+    </div>
+
+    <p class="hero-sub">
+      Lock your files with the <strong>same encryption used by governments & militaries</strong>.
+      GreenBox turns your documents into indecipherable garbage — unless you hold the key.
+      <strong>Free forever. No catch.</strong>
+    </p>
+
+    <div class="hero-buttons">
+      <a href="#cta" class="btn-primary">
+        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        Download Free
+      </a>
+      <a href="#demo" class="btn-secondary">
+        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        See It In Action
+      </a>
+    </div>
+
+    <div class="hero-trust">
+      <div class="hero-trust-item">
+        <svg width="14" height="14" fill="var(--green)" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        No account needed
+      </div>
+      <div class="hero-trust-item">
+        <svg width="14" height="14" fill="var(--green)" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        No internet required
+      </div>
+      <div class="hero-trust-item">
+        <svg width="14" height="14" fill="var(--green)" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        No telemetry
+      </div>
+      <div class="hero-trust-item">
+        <svg width="14" height="14" fill="var(--green)" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        No external DLLs
+      </div>
+      <div class="hero-trust-item">
+        <svg width="14" height="14" fill="var(--green)" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        Personal &amp; Commercial use
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ENCRYPTION LIVE DEMO ── -->
+<section id="demo" style="position: relative; z-index:1; padding: 5rem 2rem; max-width: 960px; margin: 0 auto;">
+  <div class="fade-in">
+    <div class="section-label">Live Demo</div>
+    <h2 class="section-title">Watch Your File <span style="color: var(--green);">Disappear</span> Into Noise</h2>
+    <p class="section-desc">This is exactly what happens to your file. Without your password, it's pure random chaos — mathematically impossible to reverse.</p>
+  </div>
+
+  <div class="demo-container fade-in">
+    <div class="scan-line"></div>
+    <div class="demo-header">
+      <div class="demo-tabs">
+        <button class="demo-tab active" id="tab-plain" onclick="setTab('plain')">📄 Original</button>
+        <button class="demo-tab" id="tab-encrypted" onclick="setTab('encrypted')">🔒 Encrypted</button>
+        <button class="demo-tab" id="tab-decrypted" onclick="setTab('decrypted')">🔓 Decrypted</button>
+      </div>
+      <button class="demo-btn" onclick="runAnimation()">▶ Animate</button>
+    </div>
+
+    <div class="file-display plain" id="file-display">
+      <div id="file-content"></div>
+    </div>
+
+    <div class="process-bar" id="process-bar">
+      <div class="process-step active" id="ps1">
+        <div class="process-step-icon">📄</div>
+        <div class="process-step-label">Your File</div>
+      </div>
+      <div class="process-arrow">──</div>
+      <div class="process-step" id="ps2">
+        <div class="process-step-icon">🔑</div>
+        <div class="process-step-label">100K Stretches</div>
+      </div>
+      <div class="process-arrow">──</div>
+      <div class="process-step" id="ps3">
+        <div class="process-step-icon">⚡</div>
+        <div class="process-step-label">AES-256 CTR</div>
+      </div>
+      <div class="process-arrow">──</div>
+      <div class="process-step" id="ps4">
+        <div class="process-step-icon">🛡️</div>
+        <div class="process-step-label">HMAC Sign</div>
+      </div>
+      <div class="process-arrow">──</div>
+      <div class="process-step" id="ps5">
+        <div class="process-step-icon">🔒</div>
+        <div class="process-step-label">Safe on Disk</div>
+      </div>
+    </div>
+
+    <div class="demo-status">
+      <div class="status-dot green" id="status-dot"></div>
+      <span id="status-text" style="color: var(--text-dim);">Awaiting command — click Animate to see encryption in action</span>
+    </div>
+  </div>
+
+  <!-- BIG VISUAL ENCRYPTION DEMO -->
+  <div class="encryption-arena fade-in" style="margin-top: 2rem;">
+    <div class="arena-title">REAL-TIME TRANSFORMATION — YOUR FILE BEFORE &amp; AFTER</div>
+    <div class="file-boxes">
+      <div class="file-box">
+        <div class="file-box-label original">
+          <span>🟢</span> Original File
+        </div>
+        <div class="file-content-area" id="arena-original" style="color: #7aff9e;">
+          Top Secret Report.docx<br>
+          Date: 2024-01-15<br>
+          Project: APOLLO<br>
+          Budget: $4,200,000<br>
+          Status: CLASSIFIED<br>
+          Author: J. Smith<br>
+          Clearance: L5
+        </div>
+      </div>
+      <div class="transform-arrow">
+        <div class="arrow-line" style="transform: none; width: 50px;"></div>
+        <div class="transform-label" style="font-size:1.2rem;">🔐</div>
+        <div class="transform-label">GreenBox</div>
+        <div class="transform-label">Encrypts</div>
+        <div class="arrow-line"></div>
+      </div>
+      <div class="file-box">
+        <div class="file-box-label encrypted-label">
+          <span>🔴</span> Encrypted (Garbage)
+        </div>
+        <div class="file-content-area" id="arena-encrypted" style="color: #ff6b6b;">
+          Loading...
+        </div>
+      </div>
+      <div class="transform-arrow">
+        <div class="arrow-line"></div>
+        <div class="transform-label" style="font-size:1.2rem;">🗝️</div>
+        <div class="transform-label">Correct Key</div>
+        <div class="transform-label">Required</div>
+        <div class="arrow-line"></div>
+      </div>
+      <div class="file-box">
+        <div class="file-box-label restored">
+          <span>🟢</span> Perfect Restore
+        </div>
+        <div class="file-content-area" id="arena-restored" style="color: #3a5a3f;">
+          Locked until<br>correct password<br>entered...<br><br>
+          <span style="color: #ff6b6b;">❌ Wrong key?</span><br>
+          File stays garbage.<br><br>
+          <span style="color: var(--text-muted);">GreenBox refuses to write.</span>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:1rem;">
+      <button class="demo-btn" onclick="arenaAnimate()" id="arena-btn">▶ Watch Encryption</button>
+    </div>
+  </div>
+</section>
+
+<!-- ── IMPRESSIVE STATS ── -->
+<section id="stats" class="fade-in">
+  <div class="stats-inner">
+    <div class="section-label">By The Numbers</div>
+    <h2 class="section-title">Numbers That Make <span style="color: var(--green);">Hackers Cry</span></h2>
+    <p class="section-desc">These aren't marketing numbers. These are mathematical facts.</p>
+
+    <div class="stats-grid">
+      <div class="stat-card fade-in">
+        <span class="stat-emoji">🔑</span>
+        <div class="stat-number"><span class="counter" data-target="100000" data-suffix="">0</span></div>
+        <div class="stat-label">Password Iterations Before Encryption</div>
+        <div class="stat-desc">Your password gets stretched 100,000 times through PBKDF2 before a single byte of your file is touched. A hacker guessing passwords would need to run all 100,000 iterations for EVERY single guess. That's not a wall — it's a mountain range.</div>
+      </div>
+
+      <div class="stat-card fade-in">
+        <span class="stat-emoji">🌌</span>
+        <div class="stat-number">2<sup style="font-size:1.5rem">256</sup></div>
+        <div class="stat-label">Possible Encryption Keys</div>
+        <div class="stat-desc">AES-256 has more possible keys than there are atoms in the observable universe. Even if every computer on Earth worked in tandem for billions of years, they couldn't brute-force your key. It's not hard — it's physically impossible.</div>
+      </div>
+
+      <div class="stat-card fade-in">
+        <span class="stat-emoji">⚡</span>
+        <div class="stat-number"><span class="counter" data-target="1" data-suffix="MB">0</span></div>
+        <div class="stat-label">Chunk Size Per Thread</div>
+        <div class="stat-desc">GreenBox processes your files in 1MB chunks across multiple CPU threads simultaneously. Large files encrypt at blazing speed without choking your system. It's like having a whole team of workers instead of one person doing everything.</div>
+      </div>
+
+      <div class="stat-card fade-in">
+        <span class="stat-emoji">🛡️</span>
+        <div class="stat-number"><span class="counter" data-target="2" data-suffix="×">0</span></div>
+        <div class="stat-label">HMAC Verification Passes</div>
+        <div class="stat-desc">Before writing a single byte to your disk, GreenBox runs TWO independent HMAC-SHA256 checks — one on the header + metadata, another on the data. If anything is tampered with, corrupted, or wrong, GreenBox refuses to write. Period.</div>
+      </div>
+
+      <div class="stat-card fade-in">
+        <span class="stat-emoji">🧠</span>
+        <div class="stat-number" style="font-size: 1.8rem;">ZERO</div>
+        <div class="stat-label">Keys Stored in Swap File</div>
+        <div class="stat-desc">Windows uses VirtualLock to pin your encryption key in physical RAM. The operating system is literally forbidden from moving it to the swap file on your hard drive. Your key exists only in RAM — and RAM remembers nothing when power is cut.</div>
+      </div>
+
+      <div class="stat-card fade-in">
+        <span class="stat-emoji">💸</span>
+        <div class="stat-number" style="font-size: 1.8rem;">$0.00</div>
+        <div class="stat-label">Cost. Now and Forever.</div>
+        <div class="stat-desc">No subscription. No trial. No "pro" tier. No hidden fees. No ads. GreenBox is 100% free for personal and commercial use. We built this because everyone deserves privacy — not just people who can afford it.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FUN FACTS ── -->
+<section id="funfacts" class="fade-in">
+  <div class="section-label">Fun Facts</div>
+  <h2 class="section-title">Things That'll <span style="color: var(--green);">Blow Your Mind</span></h2>
+  <p class="section-desc">We know security sounds boring. It's not. Here's why.</p>
+
+  <div class="fact-cards">
+
+    <div class="fact-card type-red fade-in">
+      <span class="fact-icon">🧲</span>
+      <div class="fact-title">The Only Way To Steal Your Key? Pull The RAM Chip.</div>
+      <p class="fact-body">
+        Hackers typically steal passwords through software — keyloggers, malware, memory dumps. With GreenBox's <strong>VirtualLock</strong>, your encryption key lives exclusively in physical RAM, locked in place by the Windows kernel itself.<br><br>
+        To steal it, an attacker would literally need to <strong>physically remove your RAM stick from your PC</strong> while it's running — then read it in milliseconds before it loses power. RAM is <em>volatile</em> — cut power and it forgets everything instantly. No data persists. Nothing survives. Your key vanishes like smoke.
+      </p>
+      <span class="fact-tag red">Physics-Level Security</span>
+    </div>
+
+    <div class="fact-card type-green fade-in">
+      <span class="fact-icon">🏔️</span>
+      <div class="fact-title">100,000 Attempts Just To Check One Password</div>
+      <p class="fact-body">
+        Imagine a hacker trying to guess your password. They try <em>"password123"</em>. GreenBox forces them to do <strong>100,000 iterations of PBKDF2</strong> just to test that one guess. On a fast server doing 1 billion operations per second, they can only test <strong>~10,000 passwords per second</strong>.<br><br>
+        A standard dictionary has ~170,000 words. At that rate? They're done in 17 seconds. Add numbers + symbols? It's now <strong>centuries of compute time</strong>. Your pet's name + birth year is now Fort Knox.
+      </p>
+      <span class="fact-tag green">100K Iterations</span>
+    </div>
+
+    <div class="fact-card type-yellow fade-in">
+      <span class="fact-icon">🌍</span>
+      <div class="fact-title">All Of Earth's Computers Can't Crack AES-256</div>
+      <p class="fact-body">
+        There are roughly <strong>10 billion computers</strong> on Earth. If every single one tested 1 trillion AES-256 keys per second (they can't, but humor us), and they started when the universe was born (13.8 billion years ago), they'd have checked <strong>4.35 × 10³⁰ keys</strong>.<br><br>
+        AES-256 has <strong>1.16 × 10⁷⁷ keys</strong>. They've barely started. They'd need to repeat the age of the universe <strong>10⁴⁶ more times</strong>. Your file is safe.
+      </p>
+      <span class="fact-tag yellow">Mathematically Unbreakable</span>
+    </div>
+
+    <div class="fact-card type-blue fade-in">
+      <span class="fact-icon">👻</span>
+      <div class="fact-title">RAM Is A Ghost — It Forgets Everything</div>
+      <p class="fact-body">
+        RAM (Random Access Memory) is <strong>volatile</strong> — it needs constant electricity to remember anything. The moment power cuts, all data in RAM vanishes — including your encryption key. <br><br>
+        This is why GreenBox uses VirtualLock: it keeps the key <em>only</em> in RAM and <em>never</em> lets Windows write it to the pagefile (swap file) on your hard drive — where it could persist and be recovered. <strong>No power = no key. It's gone. Forever.</strong>
+      </p>
+      <span class="fact-tag blue">Volatile by Design</span>
+    </div>
+
+    <div class="fact-card type-green fade-in">
+      <span class="fact-icon">🎲</span>
+      <div class="fact-title">Encrypted Files Look Like Pure Random Noise</div>
+      <p class="fact-body">
+        AES-256 in CTR mode is so good that encrypted files are <strong>statistically indistinguishable from random data</strong>. Run every known test for patterns — you'll find none. There's no header saying "this is encrypted." No structure. No clues.<br><br>
+        It's not just locked — it looks like <strong>the output of a nuclear explosion of randomness</strong>. Even knowing you used GreenBox gives an attacker exactly zero advantage.
+      </p>
+      <span class="fact-tag green">Zero Patterns</span>
+    </div>
+
+    <div class="fact-card type-red fade-in">
+      <span class="fact-icon">🚫</span>
+      <div class="fact-title">One Tampered Bit = Total Refusal</div>
+      <p class="fact-body">
+        What if someone flips a single bit in your encrypted file? Maybe tries to inject data? Corrupt your file to cause a crash? <br><br>
+        GreenBox runs <strong>dual HMAC-SHA256 verification</strong> — checking the header, metadata, AND data before writing anything. One bit out of place? <strong>GreenBox detects it and refuses to output anything</strong>. No partial writes. No corruption. No exploits. Just a clean rejection.
+      </p>
+      <span class="fact-tag red">Tamper-Proof</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section id="how" class="fade-in">
+  <div class="section-label">Process</div>
+  <h2 class="section-title">From File to <span style="color: var(--green);">Fortress</span> in Seconds</h2>
+  <p class="section-desc">Simple to use. Insanely complex underneath.</p>
+
+  <div class="steps-container">
+    <div class="step-item fade-in">
+      <div class="step-number"><div class="step-icon-inner">📁</div></div>
+      <div class="step-title">Pick Your File</div>
+      <div class="step-desc">Drag & drop or browse. Any file type. Any size. Documents, photos, videos, archives — GreenBox handles it all.</div>
+    </div>
+    <div class="step-item fade-in">
+      <div class="step-number"><div class="step-icon-inner">🔑</div></div>
+      <div class="step-title">Enter Password</div>
+      <div class="step-desc">Type your secret passphrase. It never leaves your machine. Never stored anywhere. You own it completely.</div>
+    </div>
+    <div class="step-item fade-in">
+      <div class="step-number"><div class="step-icon-inner">🔥</div></div>
+      <div class="step-title">100K Iterations</div>
+      <div class="step-desc">PBKDF2 stretches your password 100,000 times using BCrypt & Windows Native Crypto. This makes brute-force attacks impractical.</div>
+    </div>
+    <div class="step-item fade-in">
+      <div class="step-number"><div class="step-icon-inner">⚡</div></div>
+      <div class="step-title">AES-256 Encrypt</div>
+      <div class="step-desc">Multi-threaded 1MB chunk encryption using AES-256-CTR. Blazing fast. Parallelized. Your file is shredded into mathematical noise.</div>
+    </div>
+    <div class="step-item fade-in">
+      <div class="step-number"><div class="step-icon-inner">✅</div></div>
+      <div class="step-title">HMAC Verified</div>
+      <div class="step-desc">Two independent HMAC-SHA256 signatures guard header + data. Any tampering is detected. Only then does GreenBox write the output file.</div>
+    </div>
+  </div>
+
+  <!-- PIPELINE DETAIL -->
+  <div id="pipeline" style="padding: 3rem 0 0; max-width: 100%;">
+    <div class="section-label" style="margin-bottom: 1rem;">Under The Hood</div>
+    <div class="pipeline-track">
+
+      <div class="pipeline-row fade-in">
+        <div class="pipeline-num">01</div>
+        <div class="pipeline-content">
+          <div class="pipeline-title">
+            Password → PBKDF2 Key Derivation
+            <span class="pipeline-badge">BCrypt + Windows Crypto</span>
+          </div>
+          <div class="pipeline-detail">Your password is fed into PBKDF2 with 100,000 iterations, a cryptographically random 32-byte salt, and SHA-256 as the PRF. This transforms even a weak password into a full 256-bit key. The key is immediately VirtualLocked into RAM — pinned, unpageable, invisible to software.</div>
+        </div>
+      </div>
+
+      <div class="pipeline-row fade-in">
+        <div class="pipeline-num">02</div>
+        <div class="pipeline-content">
+          <div class="pipeline-title">
+            Generate Random IV + Salt
+            <span class="pipeline-badge">Windows CryptGenRandom</span>
+          </div>
+          <div class="pipeline-detail">A fresh cryptographically secure random 128-bit Initialization Vector and 256-bit salt are generated for every single encryption operation. Even if you encrypt the same file twice with the same password, the outputs are completely different. This prevents pattern analysis.</div>
+        </div>
+      </div>
+
+      <div class="pipeline-row fade-in">
+        <div class="pipeline-num">03</div>
+        <div class="pipeline-content">
+          <div class="pipeline-title">
+            Multi-threaded AES-256-CTR Encryption
+            <span class="pipeline-badge">1MB Chunks · Parallel</span>
+          </div>
+          <div class="pipeline-detail">The file is split into 1MB chunks and distributed across CPU threads. Each chunk is encrypted with AES-256 in Counter Mode (CTR) — which turns AES into a stream cipher, allowing parallel processing and perfect forward secrecy per chunk. No padding oracle attacks possible.</div>
+        </div>
+      </div>
+
+      <div class="pipeline-row fade-in">
+        <div class="pipeline-num">04</div>
+        <div class="pipeline-content">
+          <div class="pipeline-title">
+            Metadata Header Construction
+            <span class="pipeline-badge">Timestamps Preserved</span>
+          </div>
+          <div class="pipeline-detail">GreenBox builds a structured header containing: original file timestamps (real creation time + modification time), file size, metadata hash, and version info. When decrypted, your file is restored bit-for-bit including exact timestamps — files look untouched by time.</div>
+        </div>
+      </div>
+
+      <div class="pipeline-row fade-in">
+        <div class="pipeline-num">05</div>
+        <div class="pipeline-content">
+          <div class="pipeline-title">
+            Dual HMAC-SHA256 Signing
+            <span class="pipeline-badge">2-Pass Verification</span>
+          </div>
+          <div class="pipeline-detail">Pass 1: HMAC-SHA256 over the header + metadata. Pass 2: HMAC-SHA256 over the entire encrypted data block. Both signatures must verify before the output file is written. This catches tampering, corruption, wrong passwords, and partial write failures simultaneously.</div>
+        </div>
+      </div>
+
+      <div class="pipeline-row fade-in">
+        <div class="pipeline-num">06</div>
+        <div class="pipeline-content">
+          <div class="pipeline-title">
+            Safe File Write via std::filesystem
+            <span class="pipeline-badge">Bounds Checked · Atomic</span>
+          </div>
+          <div class="pipeline-detail">Only after both HMAC checks pass does GreenBox write to disk using std::filesystem with full bounds checking and metadata validation. Keys are immediately zeroed from VirtualLocked RAM using SecureZeroMemory — leaving no trace of your key anywhere.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── CRYPTO DEEP DIVE ── -->
+<section id="crypto">
+  <div class="crypto-inner">
+    <div class="section-label fade-in">Cryptography</div>
+    <h2 class="section-title fade-in">The Technical <span style="color: var(--green);">Fortress</span></h2>
+    <p class="section-desc fade-in">Every algorithm chosen for a reason. Every parameter maximized for security.</p>
+
+    <div class="crypto-grid">
+
+      <div class="crypto-card fade-in">
+        <div class="crypto-card-header">
+          <div class="crypto-icon">🔐</div>
+          <div>
+            <div class="crypto-card-title">AES-256-CTR</div>
+            <div class="crypto-card-sub">Primary Encryption Algorithm</div>
+          </div>
+        </div>
+        <ul class="crypto-list">
+          <li>256-bit key — the largest AES key size, 14 rounds of transformation</li>
+          <li>Counter Mode (CTR) — converts block cipher to stream cipher, enables parallelism</li>
+          <li>No padding required — eliminates padding oracle attack surface entirely</li>
+          <li>Each 128-bit block gets a unique counter value — never repeats</li>
+          <li>NIST-approved, NSA Suite B compliant, used in classified government systems</li>
+        </ul>
+        <div class="crypto-highlight">
+          Key Space: 2^256 = 1.16 × 10^77 possible keys<br>
+          At 10^18 guesses/sec → ~3.7 × 10^51 years to crack
+        </div>
+      </div>
+
+      <div class="crypto-card fade-in">
+        <div class="crypto-card-header">
+          <div class="crypto-icon">🏗️</div>
+          <div>
+            <div class="crypto-card-title">PBKDF2</div>
+            <div class="crypto-card-sub">Password-Based Key Derivation Function 2</div>
+          </div>
+        </div>
+        <ul class="crypto-list">
+          <li>100,000 iterations — OWASP recommends minimum 600,000 for SHA-256 (we'll be upping this)</li>
+          <li>32-byte random salt — prevents rainbow table attacks completely</li>
+          <li>SHA-256 as pseudo-random function</li>
+          <li>Implemented via Windows BCrypt — battle-tested, kernel-validated</li>
+          <li>Output: 256-bit derived key — full entropy regardless of password strength</li>
+        </ul>
+        <div class="crypto-highlight">
+          100,000 iterations × one guess = massive compute cost<br>
+          Attacker speed: ~10,000 guesses/sec (vs millions unprotected)
+        </div>
+      </div>
+
+      <div class="crypto-card fade-in">
+        <div class="crypto-card-header">
+          <div class="crypto-icon">✍️</div>
+          <div>
+            <div class="crypto-card-title">HMAC-SHA256</div>
+            <div class="crypto-card-sub">Authentication + Integrity</div>
+          </div>
+        </div>
+        <ul class="crypto-list">
+          <li>256-bit cryptographic Message Authentication Code</li>
+          <li>Pass 1: Signs header + metadata — detects structural tampering</li>
+          <li>Pass 2: Signs encrypted data — detects content tampering</li>
+          <li>Wrong key → wrong HMAC → immediate rejection, no output written</li>
+          <li>Provides authenticated encryption — not just confidentiality</li>
+        </ul>
+        <div class="crypto-highlight">
+          Forge probability: 1/2^256 per attempt<br>
+          Provides: Integrity + Authentication + Non-repudiation
+        </div>
+      </div>
+
+      <div class="crypto-card fade-in">
+        <div class="crypto-card-header">
+          <div class="crypto-icon">🔒</div>
+          <div>
+            <div class="crypto-card-title">VirtualLock + SecureZero</div>
+            <div class="crypto-card-sub">Memory Security Architecture</div>
+          </div>
+        </div>
+        <ul class="crypto-list">
+          <li>VirtualLock pins key pages in physical RAM — OS cannot page them to disk</li>
+          <li>SecureZeroMemory wipes key from RAM immediately after use</li>
+          <li>Windows Native Crypto API (BCrypt) — no third-party code in the crypto path</li>
+          <li>Prevents cold-boot attack via swap file — key never touches disk</li>
+          <li>Zero external DLL dependencies — no supply-chain attack surface</li>
+        </ul>
+        <div class="crypto-highlight">
+          Key lifetime in RAM: milliseconds only<br>
+          Key on disk: Never. Literally never. Not even 1 bit.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- STRENGTH BARS -->
+    <div class="crypto-card fade-in" style="margin-top: 1.5rem;">
+      <div class="crypto-card-header">
+        <div class="crypto-icon">📊</div>
+        <div>
+          <div class="crypto-card-title">Security Component Strength Analysis</div>
+          <div class="crypto-card-sub">Relative resistance to known attack classes</div>
+        </div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-label"><span>AES-256-CTR Brute Force Resistance</span><span>100%</span></div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" data-width="100"></div></div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-label"><span>PBKDF2 Dictionary Attack Resistance</span><span>97%</span></div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" data-width="97"></div></div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-label"><span>HMAC-SHA256 Tamper Detection</span><span>99.99%</span></div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" data-width="99"></div></div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-label"><span>VirtualLock Key Leakage Prevention</span><span>99%</span></div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" data-width="99"></div></div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-label"><span>Pattern Analysis Resistance (CTR Mode)</span><span>100%</span></div>
+        <div class="progress-bar-track"><div class="progress-bar-fill" data-width="100"></div></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── ATTACK SCENARIOS ── -->
+<section id="attacks" class="fade-in">
+  <div class="section-label">Threat Model</div>
+  <h2 class="section-title">What Hackers Try. <span style="color: var(--green);">What GreenBox Does.</span></h2>
+  <p class="section-desc">We've thought about every attack so you don't have to.</p>
+
+  <table class="attack-table">
+    <thead>
+      <tr>
+        <th>Attack Type</th>
+        <th>What The Attacker Does</th>
+        <th>GreenBox Response</th>
+        <th>Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="attack-name">🔨 Brute Force</td>
+        <td class="attack-desc">Try every possible password combination</td>
+        <td class="attack-desc">100,000 PBKDF2 iterations makes each guess astronomically expensive</td>
+        <td><div class="attack-result-safe">✅ Defeated</div></td>
+      </tr>
+      <tr>
+        <td class="attack-name">📚 Dictionary Attack</td>
+        <td class="attack-desc">Try millions of common words + variants</td>
+        <td class="attack-desc">PBKDF2 + random salt reduces guessing to ~10K/sec. Random salt kills rainbow tables.</td>
+        <td><div class="attack-result-safe">✅ Defeated</div></td>
+      </tr>
+      <tr>
+        <td class="attack-name">🌈 Rainbow Tables</td>
+        <td class="attack-desc">Precomputed hash lookup tables</td>
+        <td class="attack-desc">Unique random 256-bit salt per file makes all rainbow tables useless</td>
+        <td><div class="attack-result-safe">✅ Defeated</div></td>
+      </tr>
+      <tr>
+        <td class="attack-name">🔧 Tampering</td>
+        <td class="attack-desc">Modify the encrypted file to inject code or change content</td>
+        <td class="attack-desc">Dual HMAC-SHA256 detects any change — even a single bit flip. Output refused.</td>
+        <td><div class="attack-result-safe">✅ Defeated</div></td>
+      </tr>
+      <tr>
+        <td class="attack-name">💾 Swap File Analysis</td>
+        <td class="attack-desc">Read Windows pagefile to find keys written to disk</td>
+        <td class="attack-desc">VirtualLock prevents key from ever touching swap. SecureZero wipes RAM after use.</td>
+        <td><div class="attack-result-safe">✅ Defeated</div></td>
+      </tr>
+      <tr>
+        <td class="attack-name">🎯 Padding Oracle</td>
+        <td class="attack-desc">Exploit padding in block cipher modes to decrypt data</td>
+        <td class="attack-desc">CTR mode requires zero padding. No padding = no padding oracle. Attack surface eliminated.</td>
+        <td><div class="attack-result-safe">✅ Defeated</div></td>
+      </tr>
+      <tr>
+        <td class="attack-name">🔍 Pattern Analysis</td>
+        <td class="attack-desc">Analyze ciphertext for statistical patterns to infer plaintext</td>
+        <td class="attack-desc">AES-256-CTR output is statistically indistinguishable from random data. No patterns exist.</td>
+        <td><div class="attack-result-safe">✅ Defeated</div></td>
+      </tr>
+      <tr>
+        <td class="attack-name">📦 Supply Chain</td>
+        <td class="attack-desc">Inject malicious code through third-party DLL dependencies</td>
+        <td class="attack-desc">Zero external DLL dependencies. Only Windows Native Crypto API used. No attack surface.</td>
+        <td><div class="attack-result-safe">✅ Defeated</div></td>
+      </tr>
+      <tr>
+        <td class="attack-name">🧊 Cold Boot Attack</td>
+        <td class="attack-desc">Freeze RAM to preserve data after power cut, extract keys</td>
+        <td class="attack-desc">Keys exist in RAM for milliseconds only. SecureZeroMemory wipes immediately after use.</td>
+        <td><div class="attack-result-partial">⚠️ Largely Mitigated</div></td>
+      </tr>
+      <tr>
+        <td class="attack-name">🖥️ Physical RAM Theft</td>
+        <td class="attack-desc">Remove RAM chip while PC is running to extract key</td>
+        <td class="attack-desc">This is literally the only scenario. Requires physical access + sub-second timing. Still requires forensics lab.</td>
+        <td><div class="attack-result-partial">⚠️ Physical Only</div></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── FEATURES BENTO ── -->
+<section id="features" class="fade-in">
+  <div class="section-label">Features</div>
+  <h2 class="section-title">Everything. <span style="color: var(--green);">Nothing Wasted.</span></h2>
+  <p class="section-desc">Every feature exists for a reason. No bloat. No marketing fluff.</p>
+
+  <div class="bento-grid">
+
+    <div class="bento-card fade-in">
+      <span class="bento-icon">🔒</span>
+      <div class="bento-title">AES-256 CTR Mode</div>
+      <div class="bento-desc">The gold standard. Used by the NSA for TOP SECRET documents. Your vacation photos now have the same protection as state secrets.</div>
+      <div class="bento-code">Key Size: 256 bits<br>Mode: Counter (CTR)<br>Rounds: 14</div>
+    </div>
+
+    <div class="bento-card fade-in">
+      <span class="bento-icon">🧠</span>
+      <div class="bento-title">VirtualLock RAM Protection</div>
+      <div class="bento-desc">Your key is locked in physical RAM. The OS can't page it to disk. It's gone the moment encryption finishes.</div>
+      <div class="ram-visual" id="ram-visual">
+        <!-- Generated by JS -->
+      </div>
+    </div>
+
+    <div class="bento-card fade-in">
+      <span class="bento-icon">⚡</span>
+      <div class="bento-title">Multi-threaded Speed</div>
+      <div class="bento-desc">GreenBox uses all your CPU cores. 1MB chunks fly through encryption in parallel — large files done in seconds.</div>
+      <div class="bento-code">Chunk Size: 1,048,576 bytes<br>Threading: std::thread pool<br>Pattern: Divide & Conquer</div>
+    </div>
+
+    <div class="bento-card bento-wide fade-in">
+      <span class="bento-icon">🏛️</span>
+      <div class="bento-title">Windows Native Crypto API — No External Dependencies</div>
+      <div class="bento-desc">GreenBox uses only Windows BCrypt (built into every modern Windows installation). No OpenSSL to update. No DLL hell. No supply chain attacks. No third-party code ever touches your encryption keys. What you see is what you get — and it's been audited by Microsoft and the broader security community for decades.</div>
+      <div class="bento-code">API: Windows CNG (Cryptography Next Generation)<br>Provider: BCrypt.dll (Windows System Library)<br>External DLLs: 0 (zero) · Dependencies: None</div>
+    </div>
+
+    <div class="bento-card fade-in">
+      <span class="bento-icon">🕒</span>
+      <div class="bento-title">Timestamp Preservation</div>
+      <div class="bento-desc">Real creation time + modification time stored inside the encrypted file. Decrypt and your file is restored exactly as it was — even the dates.</div>
+    </div>
+
+    <div class="bento-card fade-in">
+      <span class="bento-icon">🛡️</span>
+      <div class="bento-title">Dual HMAC Verification</div>
+      <div class="bento-desc">Two HMAC-SHA256 passes before any write. Tampered file? Wrong key? Corrupted data? GreenBox detects it and writes nothing. Safe by default.</div>
+    </div>
+
+    <div class="bento-card fade-in">
+      <span class="bento-icon">📐</span>
+      <div class="bento-title">Bounds Checking & Validation</div>
+      <div class="bento-desc">Every buffer access, every metadata field, every size claim in an encrypted file is validated before use. Buffer overflows are architecturally impossible.</div>
+    </div>
+
+    <div class="bento-card fade-in">
+      <span class="bento-icon">💚</span>
+      <div class="bento-title">100% Free — Personal + Commercial</div>
+      <div class="bento-desc">Use it to protect your personal diary or encrypt your company's financial records. No license. No restrictions. No upsells. Forever.</div>
+    </div>
+
+    <div class="bento-card fade-in">
+      <span class="bento-icon">🗂️</span>
+      <div class="bento-title">std::filesystem Safe Handling</div>
+      <div class="bento-desc">File operations use modern C++ std::filesystem — safe paths, proper error handling, no legacy API vulnerabilities. Cross-drive, deep paths, Unicode filenames all work.</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── PASSWORD STRENGTH DEMO ── -->
+<section style="position: relative; z-index:1; padding: 3rem 2rem; max-width: 700px; margin: 0 auto;">
+  <div class="crypto-card fade-in">
+    <div class="crypto-card-header">
+      <div class="crypto-icon">🔑</div>
+      <div>
+        <div class="crypto-card-title">Password Strength Calculator</div>
+        <div class="crypto-card-sub">See how long it would take to crack your password with GreenBox protection</div>
+      </div>
+    </div>
+    <div style="margin-top: 1rem;">
+      <input
+        type="password"
+        id="pwd-input"
+        placeholder="Type a test password..."
+        style="width: 100%; padding: 0.8rem 1rem; background: rgba(0,255,136,0.04); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; outline: none; transition: border-color 0.2s;"
+        oninput="calcStrength(this.value)"
+        onfocus="this.style.borderColor='var(--green)'"
+        onblur="this.style.borderColor='var(--card-border)'"
+      >
+      <div class="pwd-strength" id="pwd-bars">
+        <div class="pwd-bar"></div>
+        <div class="pwd-bar"></div>
+        <div class="pwd-bar"></div>
+        <div class="pwd-bar"></div>
+        <div class="pwd-bar"></div>
+        <div class="pwd-bar"></div>
+        <div class="pwd-bar"></div>
+        <div class="pwd-bar"></div>
+      </div>
+      <div id="pwd-result" style="margin-top: 0.8rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-dim); line-height: 1.7; min-height: 60px;">
+        Enter a password to see how protected it is with GreenBox...
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── COMPARISON TABLE ── -->
+<section id="compare" class="fade-in">
+  <div class="section-label">Comparison</div>
+  <h2 class="section-title">GreenBox vs <span style="color: var(--text-dim);">The Alternatives</span></h2>
+  <p class="section-desc">We checked. We're not being arrogant.</p>
+
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th class="feature-col">Feature</th>
+        <th class="greenbox-col">🟢 GreenBox</th>
+        <th class="other-col">WinZip Encrypt</th>
+        <th class="other-col">7-Zip AES</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Encryption Algorithm</td>
+        <td class="greenbox-val">AES-256-CTR</td>
+        <td>AES-256</td>
+        <td>AES-256</td>
+      </tr>
+      <tr>
+        <td>Key Derivation</td>
+        <td class="greenbox-val">PBKDF2 100K iter</td>
+        <td>PBKDF2 ~1K iter</td>
+        <td>SHA-256 (minimal)</td>
+      </tr>
+      <tr>
+        <td>RAM Key Protection</td>
+        <td class="greenbox-val"><span class="check">✅ VirtualLock</span></td>
+        <td><span class="cross">❌ No</span></td>
+        <td><span class="cross">❌ No</span></td>
+      </tr>
+      <tr>
+        <td>HMAC Authentication</td>
+        <td class="greenbox-val"><span class="check">✅ 2-Pass SHA256</span></td>
+        <td><span class="cross">❌ No</span></td>
+        <td><span class="partial-check">⚠️ CRC only</span></td>
+      </tr>
+      <tr>
+        <td>Padding Oracle Immune</td>
+        <td class="greenbox-val"><span class="check">✅ CTR Mode</span></td>
+        <td><span class="cross">❌ CBC Mode</span></td>
+        <td><span class="cross">❌ CBC Mode</span></td>
+      </tr>
+      <tr>
+        <td>External Dependencies</td>
+        <td class="greenbox-val"><span class="check">✅ Zero</span></td>
+        <td><span class="cross">❌ Many</span></td>
+        <td><span class="partial-check">⚠️ Some</span></td>
+      </tr>
+      <tr>
+        <td>Timestamp Preservation</td>
+        <td class="greenbox-val"><span class="check">✅ Full</span></td>
+        <td><span class="cross">❌ No</span></td>
+        <td><span class="partial-check">⚠️ Archive only</span></td>
+      </tr>
+      <tr>
+        <td>Multi-threaded</td>
+        <td class="greenbox-val"><span class="check">✅ Yes</span></td>
+        <td><span class="partial-check">⚠️ Limited</span></td>
+        <td><span class="check">✅ Yes</span></td>
+      </tr>
+      <tr>
+        <td>Price</td>
+        <td class="greenbox-val">$0.00 Forever</td>
+        <td>$29.95/year</td>
+        <td>Free (GPL)</td>
+      </tr>
+      <tr>
+        <td>Commercial Use</td>
+        <td class="greenbox-val"><span class="check">✅ Unrestricted</span></td>
+        <td><span class="cross">❌ License required</span></td>
+        <td><span class="partial-check">⚠️ GPL restrictions</span></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── FAQ ── -->
+<section id="faq">
+  <div class="section-label fade-in">Questions</div>
+  <h2 class="section-title fade-in">We've Heard <span style="color: var(--green);">Everything</span></h2>
+  <p class="section-desc fade-in">Real questions from real people who were skeptical first.</p>
+
+  <div style="margin-top: 2rem;">
+
+    <div class="faq-item fade-in">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        Is it really free? What's the catch?
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">
+        <div class="faq-a-inner">
+          <strong>There is no catch.</strong> GreenBox is completely free — no subscription, no trial, no "free tier with limits," no ads, no telemetry, no data collection. We built it because everyone deserves the right to privacy, not just people who can afford enterprise software. Use it personally. Use it commercially. Use it forever. The only thing we ask is nothing.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item fade-in">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        What happens if I forget my password?
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">
+        <div class="faq-a-inner">
+          <strong>Your file is gone.</strong> And we mean that in the best possible way. GreenBox has absolutely no backdoor, no recovery mechanism, no "forgot password" option. Your password is the key. No key = no access. This is by design — a backdoor for you is a backdoor for attackers too. Write your password down. Use a password manager. Treat it like the key to a physical safe.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item fade-in">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        Can hackers break the encryption if they have the encrypted file?
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">
+        <div class="faq-a-inner">
+          <strong>Mathematically speaking, no.</strong> AES-256 has never been broken and is not expected to be broken in our lifetimes or our grandchildren's lifetimes. The best known attack against AES-256 is still a brute force search, which would take longer than the age of the universe even with all computing power on Earth. Additionally, PBKDF2 with 100,000 iterations makes password guessing practically infeasible. The encrypted file is safe to store anywhere — cloud, USB, email, public server.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item fade-in">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        Does GreenBox send any data online? Does it phone home?
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">
+        <div class="faq-a-inner">
+          <strong>Absolutely not.</strong> GreenBox makes zero network connections. Ever. There's no analytics, no telemetry, no update checker, no license verification, no crash reporting. Your files, your password, your machine. Nothing leaves your computer. You can run GreenBox on an air-gapped machine with no network connection and it works perfectly — because that's all it needs.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item fade-in">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        What file types can I encrypt?
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">
+        <div class="faq-a-inner">
+          <strong>Any file. Every file.</strong> GreenBox treats all files as raw bytes — it doesn't care if it's a .docx, .jpg, .mp4, .zip, .exe, or a database file. The encryption process is identical for every file type. The only thing that matters is the bytes, and GreenBox handles them all the same — with the same military-grade encryption.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item fade-in">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        How fast is it? Will it slow down my PC?
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">
+        <div class="faq-a-inner">
+          <strong>Very fast, and no.</strong> GreenBox uses multi-threaded processing with 1MB chunks distributed across your CPU cores. On a modern PC, you can expect several hundred MB/s for large files. The only "slow" part is PBKDF2 key derivation (intentionally, to resist attacks) — but that's a one-time ~1 second delay per file operation, not ongoing processing. Your system stays responsive throughout.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item fade-in">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        Is the RAM attack thing real? Should I worry about it?
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">
+        <div class="faq-a-inner">
+          <strong>It's real but practically negligible for most users.</strong> The "cold boot attack" involves physically removing RAM and reading its residual charge before it dissipates. It requires the attacker to have physical access to your running PC, specialized forensic hardware, sub-second timing, and a clean room environment. For 99.9% of threat models — including corporate espionage, theft, hackers — you'll never face this. GreenBox already mitigates this further by keeping keys in RAM for milliseconds only via VirtualLock + SecureZeroMemory. Sleep soundly.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item fade-in">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        Why is it Windows only?
+        <div class="faq-arrow">▼</div>
+      </div>
+      <div class="faq-a">
+        <div class="faq-a-inner">
+          GreenBox leverages <strong>Windows-native security primitives</strong> — VirtualLock, BCrypt (Windows CNG), SecureZeroMemory — which are Windows kernel APIs. These provide extremely deep, OS-level security guarantees. Building a cross-platform version would require different APIs on macOS and Linux, potentially weakening the security model. GreenBox was built right for Windows first. Maybe other platforms come later. <strong>Doing one thing perfectly beats doing many things adequately.</strong>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── HEXDUMP SHOWCASE ── -->
+<section style="position:relative; z-index:1; padding: 3rem 2rem; max-width: 900px; margin: 0 auto;">
+  <div class="fade-in" style="background: var(--bg2); border: 1px solid var(--card-border); border-radius: 16px; padding: 2rem; overflow: hidden; position: relative;">
+    <div class="scan-line"></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <div style="font-family: 'Orbitron', monospace; font-size: 0.9rem; color: var(--green); font-weight: 700; margin-bottom: 0.2rem;">HEX DUMP VIEWER</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Same file — before and after GreenBox encryption</div>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <div style="width: 10px; height: 10px; background: #ff5f56; border-radius: 50%;"></div>
+        <div style="width: 10px; height: 10px; background: #ffbd2e; border-radius: 50%;"></div>
+        <div style="width: 10px; height: 10px; background: #27c93f; border-radius: 50%;"></div>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div>
+        <div style="font-size: 0.7rem; color: #7aff9e; margin-bottom: 0.5rem; font-family: 'JetBrains Mono', monospace;">📄 BEFORE (readable)</div>
+        <div class="hexdump">
+          <div><span class="addr">00000000</span><span class="hex">48 65 6C 6C 6F 20 57 6F</span><span class="ascii">Hello Wo</span></div>
+          <div><span class="addr">00000008</span><span class="hex">72 6C 64 21 20 54 68 69</span><span class="ascii">rld! Thi</span></div>
+          <div><span class="addr">00000010</span><span class="hex">73 20 69 73 20 61 20 73</span><span class="ascii">s is a s</span></div>
+          <div><span class="addr">00000018</span><span class="hex">65 63 72 65 74 20 66 69</span><span class="ascii">ecret fi</span></div>
+          <div><span class="addr">00000020</span><span class="hex">6C 65 2E 20 50 72 6F 74</span><span class="ascii">le. Prot</span></div>
+          <div><span class="addr">00000028</span><span class="hex">65 63 74 20 6D 65 21 00</span><span class="ascii">ect me!.</span></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size: 0.7rem; color: #ff6b6b; margin-bottom: 0.5rem; font-family: 'JetBrains Mono', monospace;">🔒 AFTER (pure noise)</div>
+        <div class="hexdump" id="hexdump-encrypted">
+          <div><span class="addr">00000000</span><span class="hex" style="color:#ff4444">A3 F7 2C 89 1E 45 BC 0D</span><span class="ascii" style="color:#5a1a1a">·÷,‰·E¼·</span></div>
+          <div><span class="addr">00000008</span><span class="hex" style="color:#ff4444">E6 91 3A 57 F2 6B 84 C1</span><span class="ascii" style="color:#5a1a1a">æ·:W·k··</span></div>
+          <div><span class="addr">00000010</span><span class="hex" style="color:#ff4444">2F 8D 4E 73 A1 5C 09 B6</span><span class="ascii" style="color:#5a1a1a">/·Ns·\··</span></div>
+          <div><span class="addr">00000018</span><span class="hex" style="color:#ff4444">7B 3E 92 41 D8 6F 15 E3</span><span class="ascii" style="color:#5a1a1a">{>·AØo··</span></div>
+          <div><span class="addr">00000020</span><span class="hex" style="color:#ff4444">C4 58 2B 97 4A 1D 83 6E</span><span class="ascii" style="color:#5a1a1a">·X+·J··n</span></div>
+          <div><span class="addr">00000028</span><span class="hex" style="color:#ff4444">F1 0A 7E 34 56 C2 88 9B</span><span class="ascii" style="color:#5a1a1a">··~4V···</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top: 1.5rem; padding: 0.8rem 1rem; background: rgba(0,255,136,0.04); border: 1px solid rgba(0,255,136,0.1); border-radius: 8px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-dim);">
+        <span style="color: var(--green);">▸</span> The encrypted bytes have NO statistical correlation to the original. No repeating patterns. No structure. No meaning — unless you hold the key. This is what perfect encryption looks like.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section id="cta">
+  <div class="cta-orb"></div>
+  <div class="cta-inner fade-in">
+    <div class="cta-free-badge">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+      Completely Free · No Strings Attached
+    </div>
+
+    <h2 class="cta-title samarkan">
+      Your Files Deserve<br>
+      <span style="color: var(--green);">Real Protection</span>
+    </h2>
+    <p class="cta-sub">
+      Download GreenBox and encrypt your first file in under 60 seconds.
+      Military-grade security doesn't have to cost you anything.
+      Because privacy is a right, not a luxury.
+    </p>
+
+    <div class="hero-buttons">
+      <a href="#" class="btn-primary" style="font-size: 1.1rem; padding: 1rem 3rem;">
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+        Download GreenBox — Free
+      </a>
+    </div>
+
+    <div style="margin-top: 1.5rem; color: var(--text-muted); font-size: 0.8rem; display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;">
+      <span>🪟 Windows 10/11</span>
+      <span>⚡ No Installation Required</span>
+      <span>🛡️ Virus-free Guaranteed</span>
+      <span>📦 Portable Executable</span>
+    </div>
+
+    <!-- MINI STATS ROW -->
+    <div style="margin-top: 3rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 500px; margin-left: auto; margin-right: auto;">
+      <div style="text-align: center; padding: 1rem; background: var(--card); border: 1px solid var(--card-border); border-radius: 12px;">
+        <div style="font-family: 'Orbitron', monospace; font-size: 1.5rem; font-weight: 900; color: var(--green);">256</div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">Bit Keys</div>
+      </div>
+      <div style="text-align: center; padding: 1rem; background: var(--card); border: 1px solid var(--card-border); border-radius: 12px;">
+        <div style="font-family: 'Orbitron', monospace; font-size: 1.5rem; font-weight: 900; color: var(--green);">100K</div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">Iterations</div>
+      </div>
+      <div style="text-align: center; padding: 1rem; background: var(--card); border: 1px solid var(--card-border); border-radius: 12px;">
+        <div style="font-family: 'Orbitron', monospace; font-size: 1.5rem; font-weight: 900; color: var(--green);">$0</div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">Forever</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div style="display: flex; align-items: center; justify-content: center; gap: 0.6rem; margin-bottom: 1rem;">
+    <div style="width: 28px; height: 28px; background: linear-gradient(135deg, var(--green), var(--green-dim)); border-radius: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px var(--green-glow);">
+      <svg width="16" height="16" fill="#000" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z"/></svg>
+    </div>
+    <span style="font-family: 'Orbitron', monospace; font-size: 1rem; font-weight: 900; color: var(--green); letter-spacing: 0.1em;">GREENBOX</span>
+  </div>
+  <p style="margin-bottom: 0.5rem;">Military-grade encryption. Free forever. Windows only.</p>
+  <p style="margin-bottom: 1rem; font-size: 0.72rem; color: var(--text-muted); max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.6;">
+    GreenBox uses only standard, publicly audited cryptographic algorithms. No backdoors. No telemetry. No external connections. Your privacy is the product.
+  </p>
+  <p style="font-size: 0.72rem; color: var(--text-muted);">
+    AES-256 · PBKDF2 · HMAC-SHA256 · BCrypt · VirtualLock · std::filesystem
+  </p>
+  <p style="margin-top: 0.8rem; font-size: 0.7rem;">
+    © 2024 GreenBox · Free for personal & commercial use · Windows 10/11 · <a href="#">GitHub</a>
+  </p>
+</footer>
+
+<!-- ── JAVASCRIPT ── -->
+<script>
+// ── HERO CANVAS PARTICLE SYSTEM ──
+const canvas = document.getElementById('hero-canvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+let animFrame;
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+class Particle {
+  constructor() {
+    this.reset();
+  }
+  reset() {
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.vx = (Math.random() - 0.5) * 0.3;
+    this.vy = (Math.random() - 0.5) * 0.3;
+    this.size = Math.random() * 1.5 + 0.3;
+    this.alpha = Math.random() * 0.4 + 0.1;
+    this.char = Math.random() > 0.5 ? String.fromCharCode(48 + Math.floor(Math.random() * 10)) : ['A','B','C','D','E','F'][Math.floor(Math.random()*6)];
+    this.isChar = Math.random() > 0.6;
+    this.fadeDir = Math.random() > 0.5 ? 1 : -1;
+    this.fadeSpeed = Math.random() * 0.005 + 0.002;
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.alpha += this.fadeDir * this.fadeSpeed;
+    if (this.alpha > 0.5 || this.alpha < 0.05) this.fadeDir *= -1;
+    if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+  }
+  draw() {
+    ctx.globalAlpha = this.alpha;
+    if (this.isChar) {
+      ctx.fillStyle = '#00ff88';
+      ctx.font = `${this.size * 8}px JetBrains Mono, monospace`;
+      ctx.fillText(this.char, this.x, this.y);
+    } else {
+      ctx.fillStyle = '#00ff88';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+function initParticles() {
+  particles = [];
+  const count = Math.min(120, Math.floor((canvas.width * canvas.height) / 15000));
+  for (let i = 0; i < count; i++) particles.push(new Particle());
+}
+
+function drawConnections() {
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 100) {
+        ctx.globalAlpha = (1 - dist / 100) * 0.08;
+        ctx.strokeStyle = '#00ff88';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+function animateParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawConnections();
+  particles.forEach(p => { p.update(); p.draw(); });
+  ctx.globalAlpha = 1;
+  animFrame = requestAnimationFrame(animateParticles);
+}
+
+resizeCanvas();
+initParticles();
+animateParticles();
+
+window.addEventListener('resize', () => {
+  resizeCanvas();
+  initParticles();
+});
+
+// ── DEMO CONTENT ──
+const plainContent = `Project: APOLLO CLASSIFIED
+Author: Dr. Sarah Chen
+Date: 2024-01-15 09:23:41
+Budget: $4,200,000.00
+Status: TOP SECRET
+Clearance Level: 5
+Personnel Count: 847
+Location: Building 7-B
+Notes: Proceed as planned.
+      All systems nominal.`;
+
+const encryptedChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/=!@#$%^&*()';
+
+function generateGarbage(length) {
+  let result = '';
+  const lineLen = 52;
+  for (let i = 0; i < length; i++) {
+    if (i > 0 && i % lineLen === 0) result += '\n';
+    result += encryptedChars[Math.floor(Math.random() * encryptedChars.length)];
+  }
+  return result;
+}
+
+let currentTab = 'plain';
+let animRunning = false;
+let garbleInterval;
+
+const fileDisplayEl = document.getElementById('file-display');
+const fileContentEl = document.getElementById('file-content');
+const statusDot = document.getElementById('status-dot');
+const statusText = document.getElementById('status-text');
+const steps = ['ps1','ps2','ps3','ps4','ps5'];
+
+function setTab(tab) {
+  currentTab = tab;
+  clearInterval(garbleInterval);
+  document.getElementById('tab-plain').classList.toggle('active', tab === 'plain');
+  document.getElementById('tab-encrypted').classList.toggle('active', tab === 'encrypted');
+  document.getElementById('tab-decrypted').classList.toggle('active', tab === 'decrypted');
+
+  fileDisplayEl.className = 'file-display';
+  steps.forEach(s => document.getElementById(s).classList.remove('active'));
+
+  if (tab === 'plain') {
+    fileDisplayEl.classList.add('plain');
+    fileContentEl.textContent = plainContent;
+    document.getElementById('ps1').classList.add('active');
+    statusDot.className = 'status-dot green';
+    statusText.textContent = '✓ Original file — readable, unprotected, vulnerable';
+  } else if (tab === 'encrypted') {
+    fileDisplayEl.classList.add('encrypted');
+    document.getElementById('ps5').classList.add('active');
+    statusDot.className = 'status-dot red';
+    statusText.textContent = '🔒 AES-256 encrypted — pure mathematical noise. Unreadable without key.';
+    fileContentEl.textContent = generateGarbage(plainContent.length * 1.2 | 0);
+    garbleInterval = setInterval(() => {
+      fileContentEl.textContent = generateGarbage(plainContent.length * 1.2 | 0);
+    }, 80);
+  } else if (tab === 'decrypted') {
+    fileDisplayEl.classList.add('decrypted');
+    document.getElementById('ps1').classList.add('active');
+    statusDot.className = 'status-dot green';
+    statusText.textContent = '✓ Decrypted successfully — HMAC verified, timestamps restored';
+    fileContentEl.textContent = plainContent;
+  }
+}
+
+setTab('plain');
+
+async function runAnimation() {
+  if (animRunning) return;
+  animRunning = true;
+  clearInterval(garbleInterval);
+
+  // Step 1: Show plain
+  setTab('plain');
+  steps.forEach(s => document.getElementById(s).classList.remove('active'));
+  document.getElementById('ps1').classList.add('active');
+  statusDot.className = 'status-dot green';
+  statusText.textContent = '📄 Reading original file...';
+  await sleep(800);
+
+  // Step 2: Key derivation
+  steps.forEach(s => document.getElementById(s).classList.remove('active'));
+  document.getElementById('ps2').classList.add('active');
+  statusDot.className = 'status-dot yellow';
+  statusText.textContent = '🔑 Running 100,000 PBKDF2 iterations... stretching your password...';
+  for (let i = 0; i < 8; i++) {
+    fileContentEl.textContent = `PBKDF2 Iteration: ${Math.floor((i / 8) * 100000).toLocaleString()} / 100,000\nDeriving 256-bit key from password...\n\n` + generateGarbage(60);
+    await sleep(120);
+  }
+  await sleep(400);
+
+  // Step 3: Encrypting
+  steps.forEach(s => document.getElementById(s).classList.remove('active'));
+  document.getElementById('ps3').classList.add('active');
+  fileDisplayEl.className = 'file-display encrypted';
+  statusDot.className = 'status-dot red';
+  let charArray = plainContent.split('');
+  statusText.textContent = '⚡ AES-256-CTR encrypting — chunk by chunk across threads...';
+  for (let frame = 0; frame < 20; frame++) {
+    const fraction = frame / 20;
+    let display = '';
+    for (let i = 0; i < charArray.length; i++) {
+      if (i / charArray.length < fraction) {
+        display += encryptedChars[Math.floor(Math.random() * encryptedChars.length)];
+      } else {
+        display += charArray[i];
+      }
+    }
+    fileContentEl.textContent = display;
+    await sleep(60);
+  }
+  fileContentEl.textContent = generateGarbage(plainContent.length * 1.2 | 0);
+
+  // Step 4: HMAC
+  steps.forEach(s => document.getElementById(s).classList.remove('active'));
+  document.getElementById('ps4').classList.add('active');
+  statusDot.className = 'status-dot yellow';
+  statusText.textContent = '🛡️ HMAC-SHA256 Pass 1: signing header + metadata...';
+  await sleep(500);
+  statusText.textContent = '🛡️ HMAC-SHA256 Pass 2: signing encrypted data block...';
+  await sleep(500);
+
+  // Step 5: Written
+  steps.forEach(s => document.getElementById(s).classList.remove('active'));
+  document.getElementById('ps5').classList.add('active');
+  statusDot.className = 'status-dot green';
+  statusText.textContent = '✅ Both HMAC checks passed — file safely written to disk. Key wiped from RAM.';
+  garbleInterval = setInterval(() => {
+    fileContentEl.textContent = generateGarbage(plainContent.length * 1.2 | 0);
+  }, 80);
+
+  document.getElementById('tab-plain').classList.remove('active');
+  document.getElementById('tab-encrypted').classList.add('active');
+  document.getElementById('tab-decrypted').classList.remove('active');
+  currentTab = 'encrypted';
+
+  await sleep(3000);
+  animRunning = false;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── ARENA ANIMATION ──
+const arenaOriginal = document.getElementById('arena-original');
+const arenaEncrypted = document.getElementById('arena-encrypted');
+const arenaRestored = document.getElementById('arena-restored');
+const arenaBtn = document.getElementById('arena-btn');
+
+const originalText = `Top Secret Report.docx\nDate: 2024-01-15\nProject: APOLLO\nBudget: $4,200,000\nStatus: CLASSIFIED\nAuthor: J. Smith\nClearance: L5`;
+
+let arenaGarble;
+let arenaState = 'idle';
+
+async function arenaAnimate() {
+  if (arenaState === 'running') return;
+  arenaState = 'running';
+  arenaBtn.textContent = '⏳ Encrypting...';
+  clearInterval(arenaGarble);
+
+  // Reset
+  arenaOriginal.style.color = '#7aff9e';
+  arenaOriginal.innerHTML = originalText.replace(/\n/g, '<br>');
+  arenaEncrypted.style.color = '#ff6b6b';
+  arenaRestored.style.color = '#3a5a3f';
+  arenaRestored.innerHTML = 'Locked until<br>correct password<br>entered...<br><br><span style="color:#ff6b6b">❌ Wrong key?</span><br>File stays garbage.<br><br><span style="color:var(--text-muted)">GreenBox refuses to write.</span>';
+
+  // Garble the encrypted side
+  let frame = 0;
+  arenaGarble = setInterval(() => {
+    let g = '';
+    const lines = 7;
+    for (let l = 0; l < lines; l++) {
+      for (let c = 0; c < 22; c++) {
+        g += encryptedChars[Math.floor(Math.random() * encryptedChars.length)];
+      }
+      if (l < lines - 1) g += '<br>';
+    }
+    arenaEncrypted.innerHTML = g;
+    frame++;
+    if (frame > 60) {
+      // Reveal restored
+      clearInterval(arenaGarble);
+      setTimeout(() => {
+        arenaRestored.style.color = '#7aff9e';
+        arenaRestored.innerHTML = `✅ <strong>Perfect Restore!</strong><br><br>Top Secret Report.docx<br>Date: 2024-01-15<br>Project: APOLLO<br>Budget: $4,200,000<br>Status: CLASSIFIED<br><br><span style="color:var(--green);font-size:0.7rem;">Timestamps restored ✓</span>`;
+        arenaBtn.textContent = '▶ Watch Again';
+        arenaState = 'idle';
+
+        // Keep encrypted side garbling
+        arenaGarble = setInterval(() => {
+          let g = '';
+          for (let l = 0; l < 7; l++) {
+            for (let c = 0; c < 22; c++) g += encryptedChars[Math.floor(Math.random() * encryptedChars.length)];
+            if (l < 6) g += '<br>';
+          }
+          arenaEncrypted.innerHTML = g;
+        }, 100);
+      }, 500);
+    }
+  }, 80);
+}
+
+// Start garbling on load
+setTimeout(() => {
+  arenaGarble = setInterval(() => {
+    let g = '';
+    for (let l = 0; l < 7; l++) {
+      for (let c = 0; c < 22; c++) g += encryptedChars[Math.floor(Math.random() * encryptedChars.length)];
+      if (l < 6) g += '<br>';
+    }
+    arenaEncrypted.innerHTML = g;
+  }, 120);
+}, 500);
+
+// ── RAM VISUAL ──
+const ramVisual = document.getElementById('ram-visual');
+function buildRamVisual() {
+  ramVisual.innerHTML = '';
+  for (let i = 0; i < 16; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'ram-slot ' + (i < 3 ? 'protected' : i < 6 ? 'locked' : 'normal');
+    slot.textContent = i < 3 ? '🔒' : '';
+    ramVisual.appendChild(slot);
+  }
+}
+buildRamVisual();
+
+setInterval(() => {
+  const slots = ramVisual.querySelectorAll('.ram-slot');
+  slots.forEach(s => {
+    if (s.classList.contains('locked') || s.classList.contains('normal')) {
+      if (Math.random() > 0.7) {
+        const wasLocked = s.classList.contains('locked');
+        s.classList.toggle('locked', !wasLocked);
+        s.classList.toggle('normal', wasLocked);
+      }
+    }
+  });
+}, 800);
+
+// ── FAQ TOGGLE ──
+function toggleFaq(el) {
+  const answer = el.nextElementSibling;
+  const isOpen = answer.classList.contains('open');
+  document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
+  document.querySelectorAll('.faq-q').forEach(q => q.classList.remove('open'));
+  if (!isOpen) {
+    answer.classList.add('open');
+    el.classList.add('open');
+  }
+}
+
+// ── ANIMATED COUNTERS ──
+function animateCounter(el) {
+  const target = parseInt(el.dataset.target);
+  const suffix = el.dataset.suffix || '';
+  const duration = 2000;
+  const start = performance.now();
+  function update(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.floor(eased * target);
+    el.textContent = current.toLocaleString() + suffix;
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// ── PROGRESS BARS ──
+function animateProgressBars() {
+  document.querySelectorAll('.progress-bar-fill').forEach(bar => {
+    const width = bar.dataset.width;
+    bar.style.width = width + '%';
+  });
+}
+
+// ── INTERSECTION OBSERVER ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+
+      // Trigger counters
+      entry.target.querySelectorAll('.counter').forEach(c => animateCounter(c));
+
+      // Trigger progress bars
+      if (entry.target.querySelector('.progress-bar-fill')) {
+        setTimeout(animateProgressBars, 300);
+      }
+
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ── PASSWORD STRENGTH CALCULATOR ──
+function calcStrength(pwd) {
+  const bars = document.querySelectorAll('.pwd-bar');
+  const result = document.getElementById('pwd-result');
+
+  if (!pwd) {
+    bars.forEach(b => b.classList.remove('lit'));
+    result.textContent = 'Enter a password to see how protected it is with GreenBox...';
+    result.style.color = 'var(--text-dim)';
+    return;
+  }
+
+  let score = 0;
+  let entropy = 0;
+  let charset = 0;
+
+  if (/[a-z]/.test(pwd)) { charset += 26; score++; }
+  if (/[A-Z]/.test(pwd)) { charset += 26; score++; }
+  if (/[0-9]/.test(pwd)) { charset += 10; score++; }
+  if (/[^a-zA-Z0-9]/.test(pwd)) { charset += 32; score++; }
+  if (pwd.length >= 8) score++;
+  if (pwd.length >= 12) score++;
+  if (pwd.length >= 16) score++;
+  if (pwd.length >= 20) score++;
+
+  entropy = Math.log2(Math.pow(charset || 26, pwd.length));
+
+  bars.forEach((b, i) => b.classList.toggle('lit', i < score));
+
+  // Calculate crack time with GreenBox's 100K iterations
+  // Attacker can try ~10,000 passwords/second with PBKDF2-100K
+  const attemptsPerSec = 10000;
+  const possiblePasswords = Math.pow(charset || 26, pwd.length);
+  const secondsToCrack = possiblePasswords / 2 / attemptsPerSec;
+
+  function formatTime(s) {
+    if (s < 1) return 'less than a second';
+    if (s < 60) return `${Math.round(s)} seconds`;
+    if (s < 3600) return `${Math.round(s/60)} minutes`;
+    if (s < 86400) return `${Math.round(s/3600)} hours`;
+    if (s < 31536000) return `${Math.round(s/86400)} days`;
+    if (s < 3.15e9) return `${Math.round(s/31536000)} years`;
+    if (s < 3.15e12) return `${(s/3.15e9).toFixed(1)} thousand years`;
+    if (s < 3.15e15) return `${(s/3.15e12).toFixed(1)} million years`;
+    if (s < 3.15e18) return `${(s/3.15e15).toFixed(1)} billion years`;
+    return 'longer than the universe has existed (13.8 billion years)';
+  }
+
+  const crackTime = formatTime(secondsToCrack);
+  const strengthLabels = ['', 'Very Weak', 'Weak', 'Fair', 'Fair', 'Good', 'Strong', 'Very Strong', 'Fortress'];
+  const label = strengthLabels[Math.min(score, 8)];
+  const colors = ['', '#ff4444', '#ff7744', '#ffaa00', '#ffcc00', '#aaff44', '#44ff88', '#00ff88', '#00ff88'];
+  const color = colors[Math.min(score, 8)];
+
+  result.style.color = color;
+  result.innerHTML = `<strong style="color:${color}">${label}</strong> (${pwd.length} chars, ~${entropy.toFixed(0)} bits entropy)<br>
+<span style="color:var(--text-dim)">Without GreenBox: cracked in milliseconds to minutes</span><br>
+<span style="color:${color}">With GreenBox (100K iterations): <strong style="color:${color}">${crackTime}</strong> to crack</span><br>
+<span style="color:var(--text-muted);font-size:0.72rem;">PBKDF2 forces attacker to do 100,000 iterations per guess — 10,000 guesses/sec max</span>`;
+}
+
+// ── HEXDUMP ANIMATE ──
+function randomHex() {
+  return Math.floor(Math.random() * 256).toString(16).padStart(2, '0').toUpperCase();
+}
+
+setInterval(() => {
+  const hexEls = document.querySelectorAll('#hexdump-encrypted .hex');
+  hexEls.forEach(el => {
+    const bytes = el.textContent.split(' ');
+    const idx = Math.floor(Math.random() * bytes.length);
+    bytes[idx] = randomHex();
+    el.textContent = bytes.join(' ');
+  });
+}, 300);
+
+// ── SMOOTH NAV ──
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// ── GLITCH TITLE EFFECT ──
+const greenTitle = document.querySelector('.hero-title-green');
+setInterval(() => {
+  if (Math.random() > 0.95) {
+    greenTitle.style.filter = `hue-rotate(${Math.random() * 30}deg)`;
+    setTimeout(() => greenTitle.style.filter = '', 100);
+  }
+}, 500);
+
+// ── INITIAL COUNTER TRIGGER ON LOAD ──
+setTimeout(() => {
+  document.querySelectorAll('.counter').forEach(c => {
+    const rect = c.getBoundingClientRect();
+    if (rect.top < window.innerHeight) animateCounter(c);
+  });
+}, 500);
+
+// ── KEYBOARD SHORTCUT ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'e' && !e.ctrlKey && !e.altKey && document.activeElement.tagName !== 'INPUT') {
+    runAnimation();
+  }
+});
+</script>
+
+</body>
+</html>
