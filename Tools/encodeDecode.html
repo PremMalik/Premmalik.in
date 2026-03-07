@@ -1,12 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro Encoder/Decoder</title>
+    <title>Secure Cipher | Small Encryption Project</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #0ea5e9;
+            --primary-hover: #0284c7;
+            --bg-dark: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -14,116 +28,78 @@
         }
 
         body {
-            background: linear-gradient(135deg, #0a190a, #001100);
-            color: #00ff00;
-            font-family: 'Courier New', monospace;
-            padding: 20px;
-            margin: 0;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
+            background-color: var(--bg-dark);
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(0, 255, 0, 0.05) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(0, 255, 0, 0.05) 0%, transparent 20%);
+                radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(14, 165, 233, 0.1) 0%, transparent 50%);
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            line-height: 1.6;
         }
 
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            border: 2px solid #00ff00;
-            padding: 30px;
-            background-color: rgba(0, 10, 0, 0.85);
-            box-shadow: 
-                0 0 20px rgba(0, 255, 0, 0.3),
-                inset 0 0 15px rgba(0, 255, 0, 0.1);
-            position: relative;
-            z-index: 1;
-            border-radius: 8px;
-            backdrop-filter: blur(5px);
-        }
-
-        .scanline {
-            position: fixed;
-            top: 0;
-            left: 0;
             width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                to bottom,
-                rgba(0, 255, 0, 0.03) 50%,
-                rgba(0, 0, 0, 0.1) 50%
-            );
-            background-size: 100% 4px;
-            pointer-events: none;
-            z-index: 0;
-            animation: scan 8s linear infinite;
+            max-width: 800px;
+            backdrop-filter: blur(12px);
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        @keyframes scan {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(100%); }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
         }
 
         h1 {
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            text-shadow: 
-                0 0 10px #00ff00,
-                0 0 20px #00ff00,
-                0 0 30px #00ff00;
-            margin-bottom: 30px;
-            font-size: 2.5rem;
-            position: relative;
+            font-size: 2.25rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            background: linear-gradient(to bottom right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
         }
 
-        h1::after {
-            content: "";
-            display: block;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #00ff00, transparent);
-            margin-top: 10px;
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
         }
 
         .card {
-            background-color: rgba(0, 20, 0, 0.7);
-            border: 1px solid #00aa00;
-            border-radius: 6px;
-            padding: 20px;
-            margin-bottom: 25px;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
         }
 
         .card-title {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            font-size: 1.3rem;
-            color: #00ff99;
+            gap: 12px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-main);
         }
 
         .card-title i {
-            font-size: 1.2rem;
-        }
-
-        textarea, input {
-            background-color: rgba(0, 20, 0, 0.8);
-            border: 1px solid #00aa00;
-            color: #00ff00;
-            padding: 12px;
-            font-family: 'Courier New', monospace;
-            width: 100%;
-            min-height: 120px;
-            resize: vertical;
-            transition: all 0.3s ease;
-        }
-
-        textarea:focus, input:focus {
-            outline: none;
-            border-color: #00ff00;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            color: var(--primary);
         }
 
         .input-group {
@@ -133,217 +109,197 @@
         label {
             display: block;
             margin-bottom: 8px;
-            font-weight: bold;
-            color: #00ff99;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
         }
 
-        .button-group {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        button {
-            background: linear-gradient(145deg, #002200, #003300);
-            border: 2px solid #00ff00;
-            color: #00ff00;
-            padding: 12px 25px;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: bold;
-            flex: 1;
-            min-width: 120px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            font-size: 1rem;
-        }
-
-        button:hover {
-            background: linear-gradient(145deg, #003300, #00ff00);
-            color: #000;
-            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
-            transform: translateY(-2px);
-        }
-
-        button:active {
-            transform: translateY(1px);
-        }
-
-        button::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: -100%;
+        textarea,
+        input {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-main);
+            padding: 14px;
+            font-family: inherit;
             width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: 0.5s;
+            font-size: 1rem;
+            transition: all 0.2s ease;
         }
 
-        button:hover::before {
-            left: 100%;
+        textarea {
+            min-height: 120px;
+            resize: vertical;
         }
 
-        .instructions {
-            background-color: rgba(0, 30, 0, 0.6);
-            border-left: 3px solid #00ff00;
-            padding: 15px;
-            margin: 25px 0;
-            font-size: 0.9rem;
-            line-height: 1.5;
+        textarea:focus,
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+            background: rgba(15, 23, 42, 0.8);
         }
 
-        .instructions h3 {
-            margin-bottom: 10px;
-            color: #00ff99;
-        }
-
-        .instructions ul {
-            padding-left: 20px;
-        }
-
-        .instructions li {
-            margin-bottom: 8px;
-        }
-
-        .status-bar {
+        .button-row {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 15px;
-            background-color: rgba(0, 20, 0, 0.7);
-            border: 1px solid #00aa00;
-            border-radius: 4px;
-            margin-top: 20px;
-            font-size: 0.9rem;
+            gap: 12px;
+            margin-bottom: 24px;
         }
 
-        .status-item {
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-icon {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            flex: 0;
+        }
+
+        .error-toast, .success-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 16px 24px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 12px;
+            z-index: 100;
+            transform: translateY(100px);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
         }
 
-        .status-indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: #00ff00;
-            box-shadow: 0 0 8px #00ff00;
+        .error-toast {
+            background: var(--error);
+            color: white;
         }
 
-        .error {
-            color: #ff4d4d;
-            padding: 10px;
-            background-color: rgba(255, 0, 0, 0.1);
-            border-radius: 4px;
-            margin-top: 15px;
-            display: none;
+        .success-toast {
+            background: var(--success);
+            color: white;
         }
 
-        .success {
-            color: #00ff99;
-            padding: 10px;
-            background-color: rgba(0, 255, 0, 0.1);
-            border-radius: 4px;
-            margin-top: 15px;
-            display: none;
+        .toast-show {
+            transform: translateY(0);
         }
 
         .footer {
+            margin-top: 40px;
             text-align: center;
-            margin-top: 30px;
-            font-size: 0.9rem;
-            color: #00aa00;
-            opacity: 0.8;
+            color: var(--text-muted);
+            font-size: 0.875rem;
         }
 
-        @media (max-width: 600px) {
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        @media (max-width: 640px) {
             .container {
-                padding: 20px;
+                padding: 24px;
             }
-            
-            h1 {
-                font-size: 2rem;
-            }
-            
-            .button-group {
+            .button-row {
                 flex-direction: column;
             }
-            
-            button {
-                width: 100%;
+            h1 {
+                font-size: 1.75rem;
             }
         }
     </style>
 </head>
+
 <body>
-    <div class="scanline"></div>
-    
     <div class="container">
-        <h1><i class="fas fa-lock"></i> RETRO ENCODER/DECODER</h1>
-        
-        <div class="instructions">
-            <h3><i class="fas fa-info-circle"></i> How to use:</h3>
-            <ul>
-                <li>Enter your message in the input field</li>
-                <li>Provide a secret seed (any text) for encryption</li>
-                <li>Click "Encode" to encrypt your message</li>
-                <li>Copy the encoded result and share it securely</li>
-                <li>Use the same seed to decode the message</li>
-            </ul>
-        </div>
-        
+        <header>
+            <h1>Secure Cipher</h1>
+            <p class="subtitle">Professional Grade Text Encryption</p>
+        </header>
+
         <div class="card">
-            <h2 class="card-title"><i class="fas fa-keyboard"></i> Input Message</h2>
-            <div class="input-group">
-                <label for="input">Enter your message:</label>
-                <textarea id="input" placeholder="Type your message here..."></textarea>
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-keyboard"></i> Input Message</h2>
+                <button id="paste-btn" class="btn btn-secondary btn-icon" title="Paste from clipboard">
+                    <i class="fas fa-paste"></i> Paste
+                </button>
             </div>
-            
             <div class="input-group">
-                <label for="seed">Secret Seed:</label>
-                <input type="text" id="seed" placeholder="Enter a secret phrase (used for encryption/decryption)">
+                <label for="input">Message to process</label>
+                <textarea id="input" placeholder="Type or paste your message here..."></textarea>
+            </div>
+
+            <div class="input-group">
+                <label for="seed">Secret Seed (Encryption Key)</label>
+                <input type="password" id="seed" placeholder="Enter a secure phrase">
             </div>
         </div>
-        
-        <div class="button-group">
-            <button id="encode-btn"><i class="fas fa-lock"></i> Encode Message</button>
-            <button id="decode-btn"><i class="fas fa-unlock"></i> Decode Message</button>
-            <button id="clear-btn"><i class="fas fa-trash-alt"></i> Clear All</button>
+
+        <div class="button-row">
+            <button id="encode-btn" class="btn btn-primary"><i class="fas fa-lock"></i> Encode</button>
+            <button id="decode-btn" class="btn btn-secondary"><i class="fas fa-unlock"></i> Decode</button>
+            <button id="clear-btn" class="btn btn-secondary" style="flex: 0; color: var(--error);"><i class="fas fa-trash-alt"></i></button>
         </div>
-        
+
         <div class="card">
-            <h2 class="card-title"><i class="fas fa-file-alt"></i> Output Result</h2>
-            <div class="input-group">
-                <label for="output">Result:</label>
-                <textarea id="output" placeholder="Your encoded/decoded message will appear here..." readonly></textarea>
+            <div class="card-header">
+                <h2 class="card-title"><i class="fas fa-file-alt"></i> Processed Result</h2>
+                <button id="copy-btn" class="btn btn-secondary btn-icon" title="Copy to clipboard">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+            </div>
+            <div class="input-group" style="margin-bottom: 0;">
+                <textarea id="output" placeholder="Your result will appear here..." readonly></textarea>
             </div>
         </div>
-        
-        <div class="status-bar">
-            <div class="status-item">
-                <div class="status-indicator"></div>
-                <span>Ready to process</span>
-            </div>
-            <div class="status-item">
-                <i class="fas fa-shield-alt"></i> Secure Encryption
-            </div>
-        </div>
-        
-        <div id="error" class="error">
-            <i class="fas fa-exclamation-triangle"></i> <span id="error-message">Error message will appear here</span>
-        </div>
-        
-        <div id="success" class="success">
-            <i class="fas fa-check-circle"></i> <span id="success-message">Operation completed successfully</span>
-        </div>
-        
+
         <div class="footer">
-            <p>Retro Encoder/Decoder v1.0 | Secure Text Encryption</p>
+            <p>Secure Cipher Tool &bull; CC by <a href="https://premmalik.in" target="_blank">premmalik.in</a></p>
         </div>
+    </div>
+
+    <!-- Toasts -->
+    <div id="error-toast" class="error-toast">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="error-message"></span>
+    </div>
+
+    <div id="success-toast" class="success-toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="success-message"></span>
     </div>
 
     <script>
@@ -354,49 +310,61 @@
         const encodeBtn = document.getElementById('encode-btn');
         const decodeBtn = document.getElementById('decode-btn');
         const clearBtn = document.getElementById('clear-btn');
-        const errorElement = document.getElementById('error');
-        const successElement = document.getElementById('success');
+        const copyBtn = document.getElementById('copy-btn');
+        const pasteBtn = document.getElementById('paste-btn');
+        
+        const errorToast = document.getElementById('error-toast');
+        const successToast = document.getElementById('success-toast');
         const errorMessage = document.getElementById('error-message');
         const successMessage = document.getElementById('success-message');
 
-        // Show error message
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorElement.style.display = 'block';
+        // Notification System
+        function showNotification(type, message) {
+            const toast = type === 'error' ? errorToast : successToast;
+            const messageElement = type === 'error' ? errorMessage : successMessage;
+            
+            messageElement.textContent = message;
+            toast.classList.add('toast-show');
+            
             setTimeout(() => {
-                errorElement.style.display = 'none';
-            }, 5000);
-        }
-
-        // Show success message
-        function showSuccess(message) {
-            successMessage.textContent = message;
-            successElement.style.display = 'block';
-            setTimeout(() => {
-                successElement.style.display = 'none';
+                toast.classList.remove('toast-show');
             }, 3000);
         }
 
-        // Clear all fields
-        function clearAll() {
-            inputElement.value = '';
-            seedElement.value = '';
-            outputElement.value = '';
-            showSuccess('All fields cleared');
+        // Clipboard Actions
+        async function copyToClipboard() {
+            if (!outputElement.value) {
+                showNotification('error', 'Nothing to copy!');
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(outputElement.value);
+                showNotification('success', 'Copied to clipboard!');
+            } catch (err) {
+                showNotification('error', 'Failed to copy');
+            }
         }
 
-        // Generate key stream for encryption/decryption
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                inputElement.value = text;
+                showNotification('success', 'Pasted from clipboard!');
+            } catch (err) {
+                showNotification('error', 'Failed to paste. Check permissions.');
+            }
+        }
+
+        // Encryption Core
         async function generateKeyStream(length, seed) {
-            const encoder = new TextEncoder();
             let keyStream = new Uint8Array(length);
             let counter = 0;
             let generated = 0;
 
-            // Initial hash
             let seedHash = CryptoJS.SHA256(seed).toString(CryptoJS.enc.Hex);
             let hashBuffer = new Uint8Array(32);
             for (let i = 0; i < 32; i++) {
-                hashBuffer[i] = parseInt(seedHash.substr(i*2, 2), 16);
+                hashBuffer[i] = parseInt(seedHash.substr(i * 2, 2), 16);
             }
 
             while (generated < length) {
@@ -409,10 +377,10 @@
 
                 const currentHash = CryptoJS.SHA256(CryptoJS.lib.WordArray.create(inputStream))
                     .toString(CryptoJS.enc.Hex);
-                
+
                 const hashArray = new Uint8Array(32);
                 for (let i = 0; i < 32; i++) {
-                    hashArray[i] = parseInt(currentHash.substr(i*2, 2), 16);
+                    hashArray[i] = parseInt(currentHash.substr(i * 2, 2), 16);
                 }
 
                 const bytesNeeded = Math.min(hashArray.length, length - generated);
@@ -425,11 +393,7 @@
             return keyStream;
         }
 
-        // XOR two byte arrays
         function xorBytes(a, b) {
-            if (a.length !== b.length) {
-                throw new Error("Byte arrays must be of the same length");
-            }
             const result = new Uint8Array(a.length);
             for (let i = 0; i < a.length; i++) {
                 result[i] = a[i] ^ b[i];
@@ -437,85 +401,76 @@
             return result;
         }
 
-        // Encode message
+        // App Actions
         async function encodeMessage() {
             try {
-                const message = inputElement.value;
+                const message = inputElement.value.trim();
                 const seed = seedElement.value;
-                
-                if (!message) {
-                    showError("Please enter a message to encode");
-                    return;
-                }
-                
-                if (!seed) {
-                    showError("Please enter a secret seed");
-                    return;
-                }
-                
+
+                if (!message) return showNotification('error', 'Enter a message to encode');
+                if (!seed) return showNotification('error', 'Enter a secret seed');
+
                 const encoder = new TextEncoder();
                 const messageBytes = encoder.encode(message);
                 const keyStream = await generateKeyStream(messageBytes.length, seed);
-                
+
                 const encodedBytes = xorBytes(messageBytes, keyStream);
                 const encodedString = btoa(String.fromCharCode.apply(null, encodedBytes));
-                
+
                 outputElement.value = encodedString;
-                showSuccess("Message encoded successfully");
+                showNotification('success', 'Message encoded');
             } catch (error) {
-                showError(`Encoding error: ${error.message}`);
+                showNotification('error', 'Encoding failed');
             }
         }
 
-        // Decode message
         async function decodeMessage() {
             try {
-                const encodedString = inputElement.value;
+                const encodedString = inputElement.value.trim();
                 const seed = seedElement.value;
-                
-                if (!encodedString) {
-                    showError("Please enter an encoded message to decode");
-                    return;
-                }
-                
-                if (!seed) {
-                    showError("Please enter the secret seed used for encoding");
-                    return;
-                }
-                
+
+                if (!encodedString) return showNotification('error', 'Enter content to decode');
+                if (!seed) return showNotification('error', 'Enter the secret seed');
+
                 const decodedBytes = Uint8Array.from(atob(encodedString), c => c.charCodeAt(0));
                 const keyStream = await generateKeyStream(decodedBytes.length, seed);
-                
+
                 const messageBytes = xorBytes(decodedBytes, keyStream);
                 const message = new TextDecoder().decode(messageBytes);
-                
+
                 outputElement.value = message;
-                showSuccess("Message decoded successfully");
+                showNotification('success', 'Message decoded');
             } catch (error) {
-                showError(`Decoding error: ${error.message}`);
+                showNotification('error', 'Decoding failed - Check seed or content');
             }
         }
 
-        // Event Listeners
+        // Listeners
         encodeBtn.addEventListener('click', encodeMessage);
         decodeBtn.addEventListener('click', decodeMessage);
-        clearBtn.addEventListener('click', clearAll);
+        copyBtn.addEventListener('click', copyToClipboard);
+        pasteBtn.addEventListener('click', pasteFromClipboard);
+        
+        clearBtn.addEventListener('click', () => {
+            inputElement.value = '';
+            outputElement.value = '';
+            seedElement.value = '';
+            showNotification('success', 'Fields cleared');
+        });
 
-        // Allow Enter key for encoding and Shift+Enter for decoding
+        // Key bindings
         inputElement.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 encodeMessage();
-            } else if (e.key === 'Enter' && e.shiftKey) {
-                e.preventDefault();
-                decodeMessage();
             }
         });
 
-        // Initialize with sample text
+        // Init
         window.addEventListener('load', () => {
-            inputElement.value = "Welcome to the Retro Encoder/Decoder!\nTry encoding this message using a secret seed.";
+            inputElement.value = "Welcome to Secure Cipher.\nYour security is our priority.";
         });
     </script>
 </body>
+
 </html>
