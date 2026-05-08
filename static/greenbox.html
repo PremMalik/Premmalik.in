@@ -1,0 +1,1839 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GreenBox — Military-Grade File Encryption. Free Forever.</title>
+  <meta name="description"
+    content="Encrypt your files with AES-256 military-grade encryption. Free forever. No account, no internet, no telemetry. Windows native security.">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    :root {
+      --green: #00ff88;
+      --green-dim: #00cc6a;
+      --green-dark: #004422;
+      --green-glow: rgba(0, 255, 136, 0.15);
+      --green-glow-strong: rgba(0, 255, 136, 0.4);
+      --bg: #050a06;
+      --bg2: #080f09;
+      --card: rgba(0, 255, 136, 0.04);
+      --card-border: rgba(0, 255, 136, 0.12);
+      --card-hover: rgba(0, 255, 136, 0.4);
+      --text: #e8f5e9;
+      --text-dim: #7a9e80;
+      --text-muted: #3a5a3f;
+      --danger: #ff4444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--green-dark);
+      border-radius: 2px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--green);
+    }
+
+    /* ── GRID + NOISE OVERLAYS ── */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(0, 255, 136, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      opacity: 0.015;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 0.8rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(20px);
+      background: rgba(5, 10, 6, 0.88);
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--green), var(--green-dim));
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 18px var(--green-glow-strong);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-logo-icon::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.15) 50%, transparent 70%);
+      animation: shine 3s infinite;
+    }
+
+    @keyframes shine {
+      0% {
+        transform: translateX(-100%);
+      }
+
+      100% {
+        transform: translateX(200%);
+      }
+    }
+
+    .nav-logo-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: #000;
+    }
+
+    .nav-logo-text {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: var(--green);
+      letter-spacing: 0.1em;
+      text-shadow: 0 0 20px var(--green-glow-strong);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.8rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--green);
+    }
+
+    .nav-cta {
+      padding: 0.45rem 1.1rem;
+      background: transparent;
+      border: 1px solid var(--green);
+      color: var(--green);
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .nav-cta:hover {
+      background: var(--green);
+      color: #000;
+      box-shadow: 0 0 20px var(--green-glow-strong);
+    }
+
+    /* ── HERO ── */
+    #hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 7rem 2rem 3rem;
+      overflow: hidden;
+    }
+
+    #hero-canvas {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.35;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+    }
+
+    .hero-orb-1 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(0, 255, 136, 0.07) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation: orb-pulse 4s ease-in-out infinite;
+    }
+
+    .hero-orb-2 {
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(0, 255, 136, 0.05) 0%, transparent 70%);
+      top: 15%;
+      right: 8%;
+      animation: orb-float 6s ease-in-out infinite;
+    }
+
+    @keyframes orb-pulse {
+
+      0%,
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 0.6;
+      }
+    }
+
+    @keyframes orb-float {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-25px);
+      }
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.9rem;
+      background: rgba(0, 255, 136, 0.08);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      border-radius: 100px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--green);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+      animation: fadeUp 0.8s ease forwards;
+    }
+
+    .badge-dot {
+      width: 5px;
+      height: 5px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.3;
+      }
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(3rem, 8vw, 6.5rem);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+
+    .hero-title-green {
+      color: var(--green);
+      text-shadow: 0 0 30px rgba(0, 255, 136, 0.5), 0 0 60px rgba(0, 255, 136, 0.3);
+      display: inline-block;
+      animation: title-glow 3s ease-in-out infinite;
+    }
+
+    @keyframes title-glow {
+
+      0%,
+      100% {
+        text-shadow: 0 0 30px rgba(0, 255, 136, 0.5), 0 0 60px rgba(0, 255, 136, 0.3);
+      }
+
+      50% {
+        text-shadow: 0 0 50px rgba(0, 255, 136, 0.8), 0 0 100px rgba(0, 255, 136, 0.5), 0 0 150px rgba(0, 255, 136, 0.2);
+      }
+    }
+
+    @keyframes glitch-1 {
+
+      0%,
+      90%,
+      100% {
+        clip-path: inset(0);
+        transform: translate(0);
+      }
+
+      91% {
+        clip-path: inset(10% 0 85% 0);
+        transform: translate(-3px, 1px);
+      }
+
+      93% {
+        clip-path: inset(60% 0 20% 0);
+        transform: translate(3px, -1px);
+      }
+
+      95% {
+        clip-path: inset(40% 0 50% 0);
+        transform: translate(-2px, 2px);
+      }
+    }
+
+    .glitch {
+      animation: glitch-1 4s infinite;
+    }
+
+    .hero-tagline {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1rem, 2.5vw, 1.6rem);
+      color: var(--text-dim);
+      font-weight: 400;
+      margin-bottom: 1rem;
+      letter-spacing: 0.06em;
+    }
+
+    .hero-sub {
+      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      color: var(--text-dim);
+      max-width: 540px;
+      margin: 0 auto 2rem;
+      font-weight: 400;
+      line-height: 1.7;
+    }
+
+    .hero-sub strong {
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    .btn-primary {
+      padding: 0.75rem 2rem;
+      background: var(--green);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 0 25px rgba(0, 255, 136, 0.3);
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 40px rgba(0, 255, 136, 0.5), 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-secondary {
+      padding: 0.75rem 2rem;
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--green);
+      color: var(--green);
+      transform: translateY(-2px);
+    }
+
+    .hero-trust {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .hero-trust-item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      color: var(--text-dim);
+    }
+
+    .hero-trust-item svg {
+      color: var(--green);
+    }
+
+    /* ── TICKER ── */
+    .ticker-wrap {
+      width: 100%;
+      overflow: hidden;
+      padding: 0.7rem 0;
+      background: rgba(0, 255, 136, 0.025);
+      border-top: 1px solid var(--card-border);
+      border-bottom: 1px solid var(--card-border);
+      position: relative;
+      z-index: 1;
+    }
+
+    .ticker {
+      display: flex;
+      gap: 2.5rem;
+      animation: ticker-scroll 25s linear infinite;
+      width: max-content;
+    }
+
+    @keyframes ticker-scroll {
+      0% {
+        transform: translateX(0);
+      }
+
+      100% {
+        transform: translateX(-50%);
+      }
+    }
+
+    .ticker-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .ticker-item span {
+      color: var(--green);
+    }
+
+    /* ── SECTIONS ── */
+    .section {
+      position: relative;
+      z-index: 1;
+    }
+
+    .section-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--green);
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-label::before {
+      content: '';
+      display: block;
+      width: 18px;
+      height: 1px;
+      background: var(--green);
+    }
+
+    .section-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.5rem, 3.5vw, 2.4rem);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.6rem;
+      line-height: 1.2;
+    }
+
+    .section-desc {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      max-width: 500px;
+      margin-bottom: 2rem;
+      line-height: 1.7;
+    }
+
+    /* ── BENTO FEATURES ── */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .bento-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.4rem;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bento-card:hover {
+      border-color: var(--card-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3), 0 0 20px var(--green-glow);
+    }
+
+    .bento-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .bento-card:hover::before {
+      opacity: 1;
+    }
+
+    .bento-wide {
+      grid-column: span 2;
+    }
+
+    .bento-icon {
+      font-size: 1.6rem;
+      margin-bottom: 0.7rem;
+      display: block;
+    }
+
+    .bento-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+      color: var(--text);
+    }
+
+    .bento-desc {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .bento-code {
+      margin-top: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 6px;
+      padding: 0.5rem 0.7rem;
+      color: var(--green);
+      border: 1px solid rgba(0, 255, 136, 0.1);
+      line-height: 1.6;
+    }
+
+    /* ── DEMO ── */
+    .demo-container {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .demo-container::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0, 255, 136, 0.03) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .scan-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.3), transparent);
+      animation: scan 3s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes scan {
+      0% {
+        top: -100%;
+      }
+
+      100% {
+        top: 200%;
+      }
+    }
+
+    .demo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+
+    .demo-tabs {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .demo-tab {
+      padding: 0.35rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+      font-family: 'JetBrains Mono', monospace;
+      background: transparent;
+      color: var(--text-dim);
+    }
+
+    .demo-tab.active {
+      background: var(--green);
+      color: #000;
+      border-color: var(--green);
+    }
+
+    .demo-tab:not(.active) {
+      border-color: var(--card-border);
+    }
+
+    .demo-tab:not(.active):hover {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .demo-btn {
+      padding: 0.35rem 1rem;
+      background: transparent;
+      border: 1px solid var(--green);
+      color: var(--green);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .demo-btn:hover {
+      background: var(--green);
+      color: #000;
+    }
+
+    .file-display {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      line-height: 1.8;
+      border-radius: 8px;
+      padding: 1.2rem;
+      min-height: 160px;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.3s;
+    }
+
+    .file-display.plain {
+      background: rgba(0, 255, 136, 0.04);
+      border: 1px solid rgba(0, 255, 136, 0.1);
+      color: #a8d8b0;
+    }
+
+    .file-display.encrypted {
+      background: rgba(255, 50, 50, 0.04);
+      border: 1px solid rgba(255, 50, 50, 0.1);
+      color: #ff6b6b;
+    }
+
+    .file-display.decrypted {
+      background: rgba(0, 255, 136, 0.06);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+      color: #7aff9e;
+    }
+
+    .demo-status {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.8rem;
+      font-size: 0.72rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      animation: blink 1s infinite;
+    }
+
+    .status-dot.green {
+      background: var(--green);
+    }
+
+    .status-dot.red {
+      background: var(--danger);
+    }
+
+    .status-dot.yellow {
+      background: #ffaa00;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .steps-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0;
+      position: relative;
+    }
+
+    .steps-row::before {
+      content: '';
+      position: absolute;
+      top: 30px;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--card-border), var(--green-dim), var(--card-border), transparent);
+    }
+
+    .step-item {
+      text-align: center;
+      padding: 0.5rem;
+      position: relative;
+    }
+
+    .step-number {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 2px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 0.8rem;
+      font-size: 1.4rem;
+      position: relative;
+      z-index: 1;
+      transition: all 0.3s;
+    }
+
+    .step-item:hover .step-number {
+      border-color: var(--green);
+      box-shadow: 0 0 20px var(--green-glow);
+    }
+
+    .step-title {
+      font-weight: 700;
+      font-size: 0.78rem;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+    }
+
+    .step-desc {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      line-height: 1.4;
+    }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.4rem;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .stat-card:hover {
+      border-color: var(--card-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3), 0 0 20px var(--green-glow);
+    }
+
+    .stat-number {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--green);
+      line-height: 1;
+      margin-bottom: 0.3rem;
+      text-shadow: 0 0 15px var(--green-glow-strong);
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    /* ── FAQ ── */
+    .faq-item {
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      margin-bottom: 0.6rem;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .faq-item:hover {
+      border-color: var(--card-hover);
+    }
+
+    .faq-q {
+      padding: 1rem 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+      font-weight: 500;
+      font-size: 0.85rem;
+      color: var(--text);
+      user-select: none;
+      background: var(--card);
+      transition: background 0.2s;
+    }
+
+    .faq-q:hover {
+      background: rgba(0, 255, 136, 0.04);
+    }
+
+    .faq-q.open {
+      color: var(--green);
+    }
+
+    .faq-arrow {
+      width: 18px;
+      height: 18px;
+      border: 1px solid var(--card-border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      transition: all 0.2s;
+      flex-shrink: 0;
+      color: var(--text-dim);
+    }
+
+    .faq-q.open .faq-arrow {
+      border-color: var(--green);
+      color: var(--green);
+      transform: rotate(180deg);
+    }
+
+    .faq-a {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      background: rgba(0, 255, 136, 0.02);
+    }
+
+    .faq-a.open {
+      max-height: 250px;
+    }
+
+    .faq-a-inner {
+      padding: 0.8rem 1.2rem 1.2rem;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+
+    .faq-a-inner strong {
+      color: var(--text);
+    }
+
+    /* ── CTA ── */
+    #cta {
+      position: relative;
+      z-index: 1;
+      padding: 5rem 2rem;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .cta-orb {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 255, 136, 0.05) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .cta-inner {
+      position: relative;
+      max-width: 550px;
+      margin: 0 auto;
+    }
+
+    .cta-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.6rem, 4vw, 2.8rem);
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      line-height: 1.1;
+      margin-bottom: 0.8rem;
+    }
+
+    .cta-sub {
+      font-size: 0.95rem;
+      color: var(--text-dim);
+      margin-bottom: 2rem;
+      line-height: 1.7;
+    }
+
+    .cta-mini-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.8rem;
+      max-width: 400px;
+      margin: 2rem auto 0;
+    }
+
+    .cta-mini-stat {
+      text-align: center;
+      padding: 0.8rem;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+    }
+
+    .cta-mini-stat .val {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: var(--green);
+    }
+
+    .cta-mini-stat .lbl {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      padding: 1.5rem 2rem;
+      border-top: 1px solid var(--card-border);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+    }
+
+    footer a {
+      color: var(--text-dim);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: var(--green);
+    }
+
+    /* ── ANIMATIONS ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 800px) {
+      .bento-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .bento-wide {
+        grid-column: span 2;
+      }
+
+      .steps-row {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0;
+      }
+
+      .step-desc {
+        display: none;
+      }
+
+      .step-number {
+        width: 44px;
+        height: 44px;
+        font-size: 1rem;
+      }
+
+      .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 520px) {
+      nav {
+        padding: 0.7rem 1rem;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .bento-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bento-wide {
+        grid-column: span 1;
+      }
+
+      .steps-row {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .stats-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .cta-mini-stats {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="grid-bg"></div>
+  <div class="noise"></div>
+
+  <!-- ── NAV ── -->
+  <nav>
+    <div class="nav-logo">
+      <div class="nav-logo-icon">
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z" />
+        </svg>
+      </div>
+      <div class="nav-logo-text">GreenBox</div>
+    </div>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#demo">Demo</a></li>
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <a href="#cta" class="nav-cta" id="nav-download-btn">Free Download</a>
+  </nav>
+
+  <!-- ── TICKER ── -->
+  <div class="ticker-wrap" style="margin-top: 56px;">
+    <div class="ticker">
+      <div class="ticker-item">🔐 <span>AES-256</span> Military Grade</div>
+      <div class="ticker-item">🔑 <span>100,000</span> Key Iterations</div>
+      <div class="ticker-item">🛡️ <span>VirtualLock</span> RAM Protection</div>
+      <div class="ticker-item">⚡ <span>Multi-threaded</span> Processing</div>
+      <div class="ticker-item">💚 <span>100% Free</span> Forever</div>
+      <div class="ticker-item">🔒 <span>HMAC-SHA256</span> Verification</div>
+      <div class="ticker-item">🏗️ <span>No External DLLs</span></div>
+      <div class="ticker-item">📁 <span>Timestamp</span> Preserved</div>
+      <div class="ticker-item">🔐 <span>AES-256</span> Military Grade</div>
+      <div class="ticker-item">🔑 <span>100,000</span> Key Iterations</div>
+      <div class="ticker-item">🛡️ <span>VirtualLock</span> RAM Protection</div>
+      <div class="ticker-item">⚡ <span>Multi-threaded</span> Processing</div>
+      <div class="ticker-item">💚 <span>100% Free</span> Forever</div>
+      <div class="ticker-item">🔒 <span>HMAC-SHA256</span> Verification</div>
+      <div class="ticker-item">🏗️ <span>No External DLLs</span></div>
+      <div class="ticker-item">📁 <span>Timestamp</span> Preserved</div>
+    </div>
+  </div>
+
+  <!-- ── HERO ── -->
+  <section id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        FREE · Windows · No BS · Just Encryption
+      </div>
+
+      <h1 class="hero-title">
+        <span class="hero-title-green glitch">GREENBOX</span>
+      </h1>
+      <div class="hero-tagline">Your Files. Your Keys. Your Rules.</div>
+
+      <p class="hero-sub">
+        Lock your files with the <strong>same encryption used by governments & militaries</strong>.
+        Your documents become indecipherable noise — unless you hold the key. <strong>Free forever. No catch.</strong>
+      </p>
+
+      <div class="hero-buttons">
+        <a href="#cta" class="btn-primary" id="hero-download-btn">
+          <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+          </svg>
+          Download Free
+        </a>
+        <a href="#demo" class="btn-secondary" id="hero-demo-btn">
+          <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+          See It In Action
+        </a>
+      </div>
+
+      <div class="hero-trust">
+        <div class="hero-trust-item">
+          <svg width="13" height="13" fill="var(--green)" viewBox="0 0 24 24">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+          </svg>
+          No account needed
+        </div>
+        <div class="hero-trust-item">
+          <svg width="13" height="13" fill="var(--green)" viewBox="0 0 24 24">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+          </svg>
+          No internet required
+        </div>
+        <div class="hero-trust-item">
+          <svg width="13" height="13" fill="var(--green)" viewBox="0 0 24 24">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+          </svg>
+          No telemetry
+        </div>
+        <div class="hero-trust-item">
+          <svg width="13" height="13" fill="var(--green)" viewBox="0 0 24 24">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+          </svg>
+          Zero external DLLs
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FEATURES ── -->
+  <section id="features" class="section">
+    <div class="section-inner fade-in">
+      <div class="section-label">Features</div>
+      <h2 class="section-title">Everything. <span style="color: var(--green);">Nothing Wasted.</span></h2>
+      <p class="section-desc">Every feature exists for a reason. No bloat. No fluff.</p>
+
+      <div class="bento-grid">
+        <div class="bento-card" id="feature-aes">
+          <span class="bento-icon">🔒</span>
+          <div class="bento-title">AES-256 CTR Mode</div>
+          <div class="bento-desc">The gold standard used by the NSA for TOP SECRET documents. Your files get the same
+            protection as state secrets.</div>
+          <div class="bento-code">Key: 256-bit · Mode: CTR · Rounds: 14</div>
+        </div>
+
+        <div class="bento-card" id="feature-ram">
+          <span class="bento-icon">🧠</span>
+          <div class="bento-title">VirtualLock RAM Protection</div>
+          <div class="bento-desc">Your key is locked in physical RAM. The OS can't page it to disk. Gone the moment
+            encryption finishes.</div>
+        </div>
+
+        <div class="bento-card" id="feature-speed">
+          <span class="bento-icon">⚡</span>
+          <div class="bento-title">Multi-threaded Speed</div>
+          <div class="bento-desc">All CPU cores utilized. 1MB chunks fly through encryption in parallel — large files
+            done in seconds.</div>
+        </div>
+
+        <div class="bento-card bento-wide" id="feature-native">
+          <span class="bento-icon">🏛️</span>
+          <div class="bento-title">Windows Native Crypto API — Zero Dependencies</div>
+          <div class="bento-desc">Only Windows BCrypt (built-in). No OpenSSL. No DLL hell. No supply chain attacks.
+            Audited by Microsoft for decades.</div>
+          <div class="bento-code">API: Windows CNG · Provider: BCrypt.dll · External DLLs: 0</div>
+        </div>
+
+        <div class="bento-card" id="feature-hmac">
+          <span class="bento-icon">🛡️</span>
+          <div class="bento-title">Dual HMAC Verification</div>
+          <div class="bento-desc">Two HMAC-SHA256 passes before any write. Tampered file? Wrong key? Corrupted data?
+            Nothing gets written.</div>
+        </div>
+
+        <div class="bento-card" id="feature-timestamp">
+          <span class="bento-icon">🕒</span>
+          <div class="bento-title">Timestamp Preservation</div>
+          <div class="bento-desc">Real creation & modification times stored inside the encrypted file. Decrypt and your
+            file is restored exactly as it was.</div>
+        </div>
+
+        <div class="bento-card" id="feature-free">
+          <span class="bento-icon">💚</span>
+          <div class="bento-title">100% Free — Forever</div>
+          <div class="bento-desc">No subscription. No trial. No "pro" tier. Personal & commercial use. Because privacy
+            is a right, not a luxury.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── LIVE DEMO ── -->
+  <section id="demo" class="section">
+    <div class="section-inner">
+      <div class="fade-in">
+        <div class="section-label">Live Demo</div>
+        <h2 class="section-title">Watch Your File <span style="color: var(--green);">Disappear</span> Into Noise</h2>
+        <p class="section-desc">Without your password, it's pure random chaos — mathematically impossible to reverse.
+        </p>
+      </div>
+
+      <div class="demo-container fade-in">
+        <div class="scan-line"></div>
+        <div class="demo-header">
+          <div class="demo-tabs">
+            <button class="demo-tab active" id="tab-plain" onclick="setTab('plain')">📄 Original</button>
+            <button class="demo-tab" id="tab-encrypted" onclick="setTab('encrypted')">🔒 Encrypted</button>
+            <button class="demo-tab" id="tab-decrypted" onclick="setTab('decrypted')">🔓 Decrypted</button>
+          </div>
+          <button class="demo-btn" id="animate-btn" onclick="runAnimation()">▶ Animate</button>
+        </div>
+        <div class="file-display plain" id="file-display">
+          <div id="file-content"></div>
+        </div>
+        <div class="demo-status">
+          <div class="status-dot green" id="status-dot"></div>
+          <span id="status-text" style="color: var(--text-dim);">Awaiting command — click Animate to see encryption in
+            action</span>
+        </div>
+      </div>
+
+      <!-- STATS ROW -->
+      <div class="stats-row fade-in">
+        <div class="stat-card" id="stat-keys">
+          <div class="stat-number">2<sup style="font-size: 1rem;">256</sup></div>
+          <div class="stat-label">Possible Keys</div>
+        </div>
+        <div class="stat-card" id="stat-iterations">
+          <div class="stat-number"><span class="counter" data-target="100000">0</span></div>
+          <div class="stat-label">PBKDF2 Iterations</div>
+        </div>
+        <div class="stat-card" id="stat-hmac">
+          <div class="stat-number"><span class="counter" data-target="2" data-suffix="×">0</span></div>
+          <div class="stat-label">HMAC Checks</div>
+        </div>
+        <div class="stat-card" id="stat-cost">
+          <div class="stat-number">$0</div>
+          <div class="stat-label">Forever</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── HOW IT WORKS ── -->
+  <section id="how" class="section">
+    <div class="section-inner fade-in">
+      <div class="section-label">Process</div>
+      <h2 class="section-title">From File to <span style="color: var(--green);">Fortress</span> in Seconds</h2>
+      <p class="section-desc">Simple to use. Insanely complex underneath.</p>
+
+      <div class="steps-row">
+        <div class="step-item" id="step-1">
+          <div class="step-number">📁</div>
+          <div class="step-title">Pick File</div>
+          <div class="step-desc">Any file type, any size</div>
+        </div>
+        <div class="step-item" id="step-2">
+          <div class="step-number">🔑</div>
+          <div class="step-title">Password</div>
+          <div class="step-desc">Never leaves your machine</div>
+        </div>
+        <div class="step-item" id="step-3">
+          <div class="step-number">🔥</div>
+          <div class="step-title">100K Stretches</div>
+          <div class="step-desc">PBKDF2 key derivation</div>
+        </div>
+        <div class="step-item" id="step-4">
+          <div class="step-number">⚡</div>
+          <div class="step-title">AES-256</div>
+          <div class="step-desc">Multi-threaded CTR mode</div>
+        </div>
+        <div class="step-item" id="step-5">
+          <div class="step-number">✅</div>
+          <div class="step-title">HMAC Signed</div>
+          <div class="step-desc">Dual verification output</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FAQ ── -->
+  <section id="faq" class="section">
+    <div class="section-inner fade-in">
+      <div class="section-label">Questions</div>
+      <h2 class="section-title">We've Heard <span style="color: var(--green);">Everything</span></h2>
+
+      <div style="margin-top: 1.5rem; max-width: 700px;">
+        <div class="faq-item" id="faq-free">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            Is it really free? What's the catch?
+            <div class="faq-arrow">▼</div>
+          </div>
+          <div class="faq-a">
+            <div class="faq-a-inner">
+              <strong>There is no catch.</strong> No subscription, no trial, no ads, no telemetry, no data collection.
+              We built GreenBox because everyone deserves privacy — not just people who can afford enterprise software.
+              Use it personally, commercially, forever. The only thing we ask is nothing.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" id="faq-password">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            What happens if I forget my password?
+            <div class="faq-arrow">▼</div>
+          </div>
+          <div class="faq-a">
+            <div class="faq-a-inner">
+              <strong>Your file is gone.</strong> And we mean that in the best possible way. No backdoor, no recovery
+              mechanism. Your password is the key. No key = no access. This is by design — a backdoor for you is a
+              backdoor for attackers too.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" id="faq-breakable">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            Can hackers break the encryption?
+            <div class="faq-arrow">▼</div>
+          </div>
+          <div class="faq-a">
+            <div class="faq-a-inner">
+              <strong>Mathematically, no.</strong> AES-256 has never been broken. The best known attack is brute force,
+              which would take longer than the age of the universe with all computing power on Earth. PBKDF2 with
+              100,000 iterations makes password guessing infeasible. Your encrypted file is safe anywhere.
+            </div>
+          </div>
+        </div>
+
+        <div class="faq-item" id="faq-offline">
+          <div class="faq-q" onclick="toggleFaq(this)">
+            Does GreenBox phone home?
+            <div class="faq-arrow">▼</div>
+          </div>
+          <div class="faq-a">
+            <div class="faq-a-inner">
+              <strong>Absolutely not.</strong> Zero network connections. Ever. No analytics, no update checker, no crash
+              reporting. Your files, your password, your machine. Works perfectly on air-gapped systems with no network.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ── -->
+  <section id="cta">
+    <div class="cta-orb"></div>
+    <div class="cta-inner fade-in">
+      <h2 class="cta-title" style="font-family: 'Orbitron', monospace;">
+        Your Files Deserve<br>
+        <span style="color: var(--green);">Real Protection</span>
+      </h2>
+      <p class="cta-sub">
+        Download GreenBox and encrypt your first file in under 60 seconds.
+        Military-grade security doesn't have to cost you anything.
+      </p>
+
+      <div class="hero-buttons">
+        <a href="#" class="btn-primary" id="cta-download-btn" style="font-size: 1.05rem; padding: 0.85rem 2.5rem;">
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+          </svg>
+          Download GreenBox — Free
+        </a>
+      </div>
+
+      <div
+        style="margin-top: 1rem; color: var(--text-muted); font-size: 0.75rem; display: flex; gap: 1.2rem; justify-content: center; flex-wrap: wrap;">
+        <span>🪟 Windows 10/11</span>
+        <span>⚡ No Install Required</span>
+        <span>📦 Portable EXE</span>
+      </div>
+
+      <div class="cta-mini-stats">
+        <div class="cta-mini-stat">
+          <div class="val">256</div>
+          <div class="lbl">Bit Keys</div>
+        </div>
+        <div class="cta-mini-stat">
+          <div class="val">100K</div>
+          <div class="lbl">Iterations</div>
+        </div>
+        <div class="cta-mini-stat">
+          <div class="val">$0</div>
+          <div class="lbl">Forever</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <footer>
+    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 0.6rem;">
+      <div
+        style="width: 22px; height: 22px; background: linear-gradient(135deg, var(--green), var(--green-dim)); border-radius: 5px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 12px var(--green-glow);">
+        <svg width="13" height="13" fill="#000" viewBox="0 0 24 24">
+          <path
+            d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l5 2.18V11c0 3.5-2.33 6.79-5 7.93-2.67-1.14-5-4.43-5-7.93V7.18L12 5z" />
+        </svg>
+      </div>
+      <span
+        style="font-family: 'Orbitron', monospace; font-size: 0.85rem; font-weight: 900; color: var(--green); letter-spacing: 0.1em;">GREENBOX</span>
+    </div>
+    <!-- <p>Military-grade encryption. Free forever. No backdoors. No telemetry.</p>
+  <p style="margin-top: 0.3rem; font-size: 0.65rem; color: var(--text-muted);">
+    AES-256 · PBKDF2 · HMAC-SHA256 · BCrypt · VirtualLock · std::filesystem
+  </p> -->
+    <p style="margin-top: 0.5rem;">
+      © 2026 GreenBox by Prem Malik· Free for personal & commercial use · <a
+        href="https://github.com/PremMalik/EncryptGreenBox">GitHub</a>
+    </p>
+  </footer>
+
+  <!-- ── JAVASCRIPT ── -->
+  <script>
+    // ── PARTICLE CANVAS ──
+    const canvas = document.getElementById('hero-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.25;
+        this.vy = (Math.random() - 0.5) * 0.25;
+        this.size = Math.random() * 1.2 + 0.3;
+        this.alpha = Math.random() * 0.35 + 0.08;
+        this.char = Math.random() > 0.5
+          ? String.fromCharCode(48 + Math.floor(Math.random() * 10))
+          : 'ABCDEF'[Math.floor(Math.random() * 6)];
+        this.isChar = Math.random() > 0.6;
+        this.fadeDir = Math.random() > 0.5 ? 1 : -1;
+        this.fadeSpeed = Math.random() * 0.004 + 0.002;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.alpha += this.fadeDir * this.fadeSpeed;
+        if (this.alpha > 0.45 || this.alpha < 0.05) this.fadeDir *= -1;
+        if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+      }
+      draw() {
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = '#00ff88';
+        if (this.isChar) {
+          ctx.font = `${this.size * 8}px JetBrains Mono, monospace`;
+          ctx.fillText(this.char, this.x, this.y);
+        } else {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    function initParticles() {
+      particles = [];
+      const count = Math.min(80, Math.floor((canvas.width * canvas.height) / 18000));
+      for (let i = 0; i < count; i++) particles.push(new Particle());
+    }
+
+    function drawConnections() {
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 90) {
+            ctx.globalAlpha = (1 - dist / 90) * 0.06;
+            ctx.strokeStyle = '#00ff88';
+            ctx.lineWidth = 0.4;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawConnections();
+      particles.forEach(p => { p.update(); p.draw(); });
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(animateParticles);
+    }
+
+    resizeCanvas();
+    initParticles();
+    animateParticles();
+    window.addEventListener('resize', () => { resizeCanvas(); initParticles(); });
+
+    // ── DEMO ──
+    const plainContent = `Project: APOLLO CLASSIFIED
+Author: Dr. Sarah Chen
+Date: 2024-01-15 09:23:41
+Budget: $4,200,000.00
+Status: TOP SECRET
+Clearance Level: 5
+Personnel Count: 847
+Location: Building 7-B
+Notes: Proceed as planned.`;
+
+    const encChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/=!@#$%^&*()';
+
+    function genGarbage(len) {
+      let r = '', ll = 48;
+      for (let i = 0; i < len; i++) {
+        if (i > 0 && i % ll === 0) r += '\n';
+        r += encChars[Math.floor(Math.random() * encChars.length)];
+      }
+      return r;
+    }
+
+    let currentTab = 'plain', animRunning = false, garbleInt;
+    const fileDsp = document.getElementById('file-display');
+    const fileCnt = document.getElementById('file-content');
+    const sDot = document.getElementById('status-dot');
+    const sTxt = document.getElementById('status-text');
+
+    function setTab(tab, force = false) {
+      if (animRunning && !force) return;
+      currentTab = tab;
+      clearInterval(garbleInt);
+      document.getElementById('tab-plain').classList.toggle('active', tab === 'plain');
+      document.getElementById('tab-encrypted').classList.toggle('active', tab === 'encrypted');
+      document.getElementById('tab-decrypted').classList.toggle('active', tab === 'decrypted');
+      fileDsp.className = 'file-display';
+
+      if (tab === 'plain') {
+        fileDsp.classList.add('plain');
+        fileCnt.textContent = plainContent;
+        sDot.className = 'status-dot green';
+        sTxt.textContent = '✓ Original file — readable, unprotected, vulnerable';
+      } else if (tab === 'encrypted') {
+        fileDsp.classList.add('encrypted');
+        sDot.className = 'status-dot red';
+        sTxt.textContent = '🔒 AES-256 encrypted — pure noise. Unreadable without key.';
+        fileCnt.textContent = genGarbage(plainContent.length * 1.1 | 0);
+        garbleInt = setInterval(() => {
+          fileCnt.textContent = genGarbage(plainContent.length * 1.1 | 0);
+        }, 80);
+      } else {
+        fileDsp.classList.add('decrypted');
+        sDot.className = 'status-dot green';
+        sTxt.textContent = '✓ Decrypted — HMAC verified, timestamps restored';
+        fileCnt.textContent = plainContent;
+      }
+    }
+    setTab('plain');
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function runAnimation() {
+      if (animRunning) return;
+      animRunning = true;
+      clearInterval(garbleInt);
+
+      setTab('plain', true); sDot.className = 'status-dot green';
+      sTxt.textContent = '📄 Reading original file...';
+      await sleep(700);
+
+      sDot.className = 'status-dot yellow';
+      sTxt.textContent = '🔑 Running 100,000 PBKDF2 iterations...';
+      for (let i = 0; i < 6; i++) {
+        fileCnt.textContent = `PBKDF2 Iteration: ${Math.floor((i / 6) * 100000).toLocaleString()} / 100,000\nDeriving 256-bit key...\n\n` + genGarbage(50);
+        await sleep(130);
+      }
+      await sleep(300);
+
+      fileDsp.className = 'file-display encrypted';
+      sDot.className = 'status-dot red';
+      sTxt.textContent = '⚡ AES-256-CTR encrypting — chunk by chunk...';
+      const chars = plainContent.split('');
+      for (let f = 0; f < 16; f++) {
+        const frac = f / 16;
+        let d = '';
+        for (let i = 0; i < chars.length; i++)
+          d += (i / chars.length < frac)
+            ? encChars[Math.floor(Math.random() * encChars.length)]
+            : chars[i];
+        fileCnt.textContent = d;
+        await sleep(50);
+      }
+      fileCnt.textContent = genGarbage(plainContent.length * 1.1 | 0);
+
+      sDot.className = 'status-dot yellow';
+      sTxt.textContent = '🛡️ HMAC-SHA256 Pass 1: signing header...';
+      await sleep(400);
+      sTxt.textContent = '🛡️ HMAC-SHA256 Pass 2: signing data...';
+      await sleep(400);
+
+      sDot.className = 'status-dot green';
+      sTxt.textContent = '✅ Both HMAC checks passed — file saved. Key wiped from RAM.';
+      garbleInt = setInterval(() => {
+        fileCnt.textContent = genGarbage(plainContent.length * 1.1 | 0);
+      }, 80);
+
+      document.getElementById('tab-plain').classList.remove('active');
+      document.getElementById('tab-encrypted').classList.add('active');
+      document.getElementById('tab-decrypted').classList.remove('active');
+      currentTab = 'encrypted';
+
+      await sleep(1500);
+      clearInterval(garbleInt);
+
+      document.getElementById('tab-encrypted').classList.remove('active');
+      document.getElementById('tab-decrypted').classList.add('active');
+      currentTab = 'decrypted';
+      
+      fileDsp.className = 'file-display decrypted';
+      sDot.className = 'status-dot yellow';
+      sTxt.textContent = '🔑 Requesting password... Validating key...';
+      
+      await sleep(1000);
+      
+      sTxt.textContent = '🛡️ Checking HMAC signatures...';
+      await sleep(800);
+      
+      sTxt.textContent = '⚡ AES-256-CTR decrypting...';
+      
+      for (let f = 0; f <= 16; f++) {
+        const frac = f / 16;
+        let d = '';
+        for (let i = 0; i < chars.length; i++) {
+          d += (i / chars.length >= 1 - frac)
+            ? chars[i]
+            : encChars[Math.floor(Math.random() * encChars.length)];
+        }
+        fileCnt.textContent = d;
+        await sleep(50);
+      }
+      
+      sDot.className = 'status-dot green';
+      sTxt.textContent = '✓ Decrypted — HMAC verified, timestamps restored';
+      fileCnt.textContent = plainContent;
+
+      animRunning = false;
+    }
+
+    // ── FAQ ──
+    function toggleFaq(el) {
+      const answer = el.nextElementSibling;
+      const isOpen = answer.classList.contains('open');
+      document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
+      document.querySelectorAll('.faq-q').forEach(q => q.classList.remove('open'));
+      if (!isOpen) { answer.classList.add('open'); el.classList.add('open'); }
+    }
+
+    // ── COUNTERS ──
+    function animateCounter(el) {
+      const target = parseInt(el.dataset.target);
+      const suffix = el.dataset.suffix || '';
+      const duration = 1800, start = performance.now();
+      function update(now) {
+        const p = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.floor(eased * target).toLocaleString() + suffix;
+        if (p < 1) requestAnimationFrame(update);
+      }
+      requestAnimationFrame(update);
+    }
+
+    // ── INTERSECTION OBSERVER ──
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          e.target.querySelectorAll('.counter').forEach(c => animateCounter(c));
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+
+    // ── SMOOTH NAV ──
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        const t = document.querySelector(a.getAttribute('href'));
+        if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      });
+    });
+
+    // ── GLITCH TITLE ──
+    const greenTitle = document.querySelector('.hero-title-green');
+    setInterval(() => {
+      if (Math.random() > 0.95) {
+        greenTitle.style.filter = `hue-rotate(${Math.random() * 30}deg)`;
+        setTimeout(() => greenTitle.style.filter = '', 100);
+      }
+    }, 500);
+
+    // ── TRIGGER VISIBLE COUNTERS ON LOAD ──
+    setTimeout(() => {
+      document.querySelectorAll('.counter').forEach(c => {
+        const rect = c.getBoundingClientRect();
+        if (rect.top < window.innerHeight) animateCounter(c);
+      });
+    }, 500);
+  </script>
+
+</body>
+
+</html>
