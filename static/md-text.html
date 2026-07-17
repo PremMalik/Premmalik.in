@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -22,11 +23,30 @@
     --text-dim: #4a4642;
     --red: #e05c5c;
     --green: #5ce08a;
+
     --preview-bg: #f7f4ee;
     --preview-text: #1a1814;
     --preview-muted: #6b6560;
     --preview-border: #ddd8ce;
     --preview-accent: #c9a227;
+    --preview-code-bg: rgba(0,0,0,0.035);
+    --preview-comment: #948c81;
+    --preview-inline-code-bg: #e8e3da;
+    --preview-inline-code-text: #8b3a3a;
+    --preview-table-header-bg: #e2dcd3;
+  }
+
+  :root.dark-preview {
+    --preview-bg: #1b1b1b;
+    --preview-text: #e9e5dd;
+    --preview-muted: #9b948b;
+    --preview-border: #3a352f;
+    --preview-accent: #e8c547;
+    --preview-code-bg: rgba(255,255,255,0.045);
+    --preview-comment: #78726a;
+    --preview-inline-code-bg: #33302b;
+    --preview-inline-code-text: #e0937f;
+    --preview-table-header-bg: #2b2823;
   }
 
   html, body { height: 100%; overflow: hidden; }
@@ -190,7 +210,7 @@
     gap: 8px;
   }
 
-  .pane-label span {
+  .pane-label span.dot {
     display: inline-block;
     width: 6px; height: 6px;
     border-radius: 50%;
@@ -241,6 +261,24 @@
   #editor::-webkit-scrollbar-track { background: transparent; }
   #editor::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+  /* ── THEME TOGGLE (preview) ── */
+  .theme-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 6px;
+    width: 24px; height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+
   /* ── PREVIEW ── */
   .preview-wrapper {
     flex: 1;
@@ -256,30 +294,34 @@
     padding: 40px 48px;
     max-width: 780px;
     margin: 0 auto;
+  }
+
+  /* Shared markdown-rendered typography, used by both the live preview
+     and the live PDF page preview so both stay visually identical. */
+  .md-content {
     color: var(--preview-text);
     font-family: 'DM Sans', sans-serif;
     font-size: 1rem;
     line-height: 1.8;
   }
 
-  /* Preview typography */
-  #preview h1, #preview h2, #preview h3,
-  #preview h4, #preview h5, #preview h6 {
+  .md-content h1, .md-content h2, .md-content h3,
+  .md-content h4, .md-content h5, .md-content h6 {
     font-family: 'Playfair Display', serif;
     color: var(--preview-text);
     line-height: 1.3;
     margin-top: 2em;
     margin-bottom: 0.6em;
   }
-  #preview h1 { font-size: 2.2rem; border-bottom: 2px solid var(--preview-accent); padding-bottom: 12px; }
-  #preview h2 { font-size: 1.65rem; border-bottom: 1px solid var(--preview-border); padding-bottom: 8px; }
-  #preview h3 { font-size: 1.3rem; }
-  #preview h4 { font-size: 1.1rem; }
-  #preview p { margin-bottom: 1.1em; }
-  #preview a { color: var(--preview-accent); text-decoration: underline; }
-  #preview strong { font-weight: 600; }
-  #preview em { font-style: italic; color: var(--preview-muted); }
-  #preview blockquote {
+  .md-content h1 { font-size: 2.2em; border-bottom: 2px solid var(--preview-accent); padding-bottom: 12px; }
+  .md-content h2 { font-size: 1.65em; border-bottom: 1px solid var(--preview-border); padding-bottom: 8px; }
+  .md-content h3 { font-size: 1.3em; }
+  .md-content h4 { font-size: 1.1em; }
+  .md-content p { margin-bottom: 1.1em; }
+  .md-content a { color: var(--preview-accent); text-decoration: underline; }
+  .md-content strong { font-weight: 600; }
+  .md-content em { font-style: italic; color: var(--preview-muted); }
+  .md-content blockquote {
     border-left: 3px solid var(--preview-accent);
     padding: 8px 20px;
     margin: 1.5em 0;
@@ -288,47 +330,50 @@
     color: var(--preview-muted);
     font-style: italic;
   }
-  #preview code {
+  .md-content code {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.82em;
-    background: #e8e3da;
+    background: var(--preview-inline-code-bg);
     padding: 2px 6px;
     border-radius: 4px;
-    color: #8b3a3a;
+    color: var(--preview-inline-code-text);
   }
-  #preview pre {
-    background: #1a1814;
-    color: #e8e4dc;
+  /* Code blocks: dashed line-box instead of a solid dark fill */
+  .md-content pre {
+    background: var(--preview-code-bg);
+    border: 2px dashed var(--preview-border);
+    color: var(--preview-text);
     padding: 20px 24px;
     border-radius: 8px;
     overflow-x: auto;
     margin: 1.5em 0;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.83rem;
+    font-size: 0.83em;
     line-height: 1.65;
   }
-  #preview pre code { background: none; padding: 0; color: inherit; }
-  #preview ul, #preview ol { padding-left: 24px; margin-bottom: 1.1em; }
-  #preview li { margin-bottom: 0.35em; }
-  #preview table {
+  .md-content pre code { background: none; padding: 0; color: inherit; }
+  .md-content pre .code-comment { color: var(--preview-comment); }
+  .md-content ul, .md-content ol { padding-left: 24px; margin-bottom: 1.1em; }
+  .md-content li { margin-bottom: 0.35em; }
+  .md-content table {
     width: 100%; border-collapse: collapse; margin: 1.5em 0;
-    font-size: 0.92rem;
+    font-size: 0.92em;
   }
-  #preview th {
-    background: #e2dcd3;
+  .md-content th {
+    background: var(--preview-table-header-bg);
     padding: 10px 16px;
     text-align: left;
     font-weight: 600;
     border-bottom: 2px solid var(--preview-border);
   }
-  #preview td { padding: 9px 16px; border-bottom: 1px solid var(--preview-border); }
-  #preview tr:last-child td { border-bottom: none; }
-  #preview hr {
+  .md-content td { padding: 9px 16px; border-bottom: 1px solid var(--preview-border); }
+  .md-content tr:last-child td { border-bottom: none; }
+  .md-content hr {
     border: none;
     border-top: 1px solid var(--preview-border);
     margin: 2em 0;
   }
-  #preview img { max-width: 100%; border-radius: 6px; }
+  .md-content img { max-width: 100%; border-radius: 6px; }
 
   .preview-empty {
     display: flex;
@@ -336,13 +381,114 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #b5aea6;
+    color: var(--preview-muted);
     gap: 12px;
     padding: 40px;
   }
 
   .preview-empty svg { opacity: 0.3; }
   .preview-empty p { font-size: 0.9rem; text-align: center; max-width: 260px; line-height: 1.6; }
+
+  /* ── LIVE PDF PREVIEW ── */
+  .pdf-preview-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .pdf-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 10px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .pdf-toolbar-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .pdf-toolbar select {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    outline: none;
+  }
+
+  .pdf-toolbar input[type="range"] {
+    accent-color: var(--accent);
+    width: 110px;
+  }
+
+  #pdf-font-size-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    min-width: 34px;
+  }
+
+  .pdf-pages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .pdf-page {
+    width: var(--pdf-page-w, 794px);
+    height: var(--pdf-page-h, 1123px);
+    background: var(--preview-bg);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+    border-radius: 2px;
+    position: relative;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .pdf-page-content {
+    width: calc(100% - var(--pdf-pad-h, 96px) * 2);
+    height: calc(100% - var(--pdf-pad-v, 96px) * 2);
+    margin: var(--pdf-pad-v, 96px) var(--pdf-pad-h, 96px);
+    overflow: hidden;
+  }
+
+  .pdf-page-number {
+    position: absolute;
+    bottom: 14px;
+    right: 28px;
+    font-size: 0.68rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--preview-muted);
+    opacity: 0.7;
+  }
+
+  .pdf-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    text-align: center;
+    padding: 40px;
+  }
 
   /* ── DOWNLOAD BAR ── */
   .download-bar {
@@ -507,6 +653,7 @@
     <button class="view-btn active" onclick="setView('split')" id="btn-split">Split</button>
     <button class="view-btn" onclick="setView('editor')" id="btn-editor">Editor</button>
     <button class="view-btn" onclick="setView('preview')" id="btn-preview">Preview</button>
+    <button class="view-btn" onclick="setView('pdf')" id="btn-pdf">PDF</button>
   </div>
   <div class="header-right">
     <span class="stats" id="stats">0w · 0l</span>
@@ -519,6 +666,8 @@
   <button class="tb-btn" onclick="wrap('*','*')" title="Italic" style="font-style:italic">I</button>
   <button class="tb-btn" onclick="wrap('~~','~~')" title="Strikethrough" style="text-decoration:line-through">S</button>
   <button class="tb-btn" onclick="wrap('`','`')" title="Inline code">`</button>
+  <button class="tb-btn" onclick="changeFontSize(-0.15)" title="Decrease font size (selection or current word)">A-</button>
+  <button class="tb-btn" onclick="changeFontSize(0.15)" title="Increase font size (selection or current word)">A+</button>
   <div class="toolbar-sep"></div>
   <button class="tb-btn" onclick="insertLine('# ')" title="H1">H1</button>
   <button class="tb-btn" onclick="insertLine('## ')" title="H2">H2</button>
@@ -538,7 +687,7 @@
 <div class="workspace" id="workspace">
   <!-- EDITOR PANE -->
   <div class="pane" id="pane-editor">
-    <div class="pane-label"><span></span>Markdown Input</div>
+    <div class="pane-label"><span class="dot"></span>Markdown Input</div>
     <textarea id="editor" spellcheck="false"
       placeholder="Paste or type your Markdown here…
 
@@ -552,16 +701,27 @@
 
 ```js
 console.log('Hello!')
-```"></textarea>
+```
+
+Tip: Shift+Enter inserts a <br> line break automatically."></textarea>
   </div>
 
   <div class="divider" id="divider"></div>
 
   <!-- PREVIEW PANE -->
   <div class="pane" id="pane-preview">
-    <div class="pane-label"><span class="live-dot"></span>Live Preview</div>
-    <div class="preview-wrapper">
-      <div id="preview">
+    <div class="pane-label">
+      <span class="dot live-dot"></span>
+      <span id="preview-label-text">Live Preview</span>
+      <div class="spacer"></div>
+      <button class="theme-toggle" id="theme-toggle-btn" onclick="togglePreviewTheme()" title="Toggle preview light / dark theme">
+        <span id="theme-toggle-icon">🌙</span>
+      </button>
+    </div>
+
+    <!-- Normal continuous markdown preview -->
+    <div class="preview-wrapper" id="preview-wrapper">
+      <div id="preview" class="md-content">
         <div class="preview-empty" id="empty-state">
           <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
             <rect x="8" y="10" width="32" height="4" rx="2" fill="currentColor"/>
@@ -571,6 +731,27 @@ console.log('Hello!')
           </svg>
           <p>Start typing in the editor and your preview will appear here in real time</p>
         </div>
+      </div>
+    </div>
+
+    <!-- Live paginated PDF preview (hidden unless PDF view is selected) -->
+    <div class="pdf-preview-wrapper" id="pdf-preview-wrapper" style="display:none;">
+      <div class="pdf-toolbar">
+        <label class="pdf-toolbar-label">
+          Page size
+          <select id="pdf-page-size">
+            <option value="a4">A4</option>
+            <option value="letter">US Letter</option>
+          </select>
+        </label>
+        <label class="pdf-toolbar-label">
+          Font size
+          <input type="range" id="pdf-font-size" min="10" max="22" step="1" value="14">
+          <span id="pdf-font-size-label">14px</span>
+        </label>
+      </div>
+      <div class="pdf-pages" id="pdf-pages">
+        <div class="pdf-empty">Start typing in the editor to see your live PDF page preview…</div>
       </div>
     </div>
   </div>
@@ -590,9 +771,9 @@ console.log('Hello!')
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     .html
   </button>
-  <button class="dl-btn" onclick="download('txt')">
+  <button class="dl-btn" onclick="download('pdf')">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    .txt
+    .pdf
   </button>
   <div class="spacer"></div>
   <button class="clear-btn" onclick="clearEditor()">✕ Clear</button>
@@ -604,17 +785,28 @@ console.log('Hello!')
 <script>
   const editor = document.getElementById('editor');
   const preview = document.getElementById('preview');
-  const emptyState = document.getElementById('empty-state');
   const statsEl = document.getElementById('stats');
 
   // ── MARKED CONFIG ──
   marked.setOptions({ breaks: true, gfm: true });
 
+  // ── PDF PAGE DIMENSIONS (px @ 96dpi) ──
+  const PDF_PAGE_SIZES = {
+    a4: { w: 794, h: 1123 },
+    letter: { w: 816, h: 1056 }
+  };
+
+  let currentView = 'split';
+  let toastTimer;
+
   // ── LIVE PREVIEW ──
   let debounceTimer;
   editor.addEventListener('input', () => {
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(renderPreview, 80);
+    debounceTimer = setTimeout(() => {
+      renderPreview();
+      if (currentView === 'pdf') renderPdfPreview();
+    }, 80);
     updateStats();
   });
 
@@ -633,6 +825,7 @@ console.log('Hello!')
       return;
     }
     preview.innerHTML = marked.parse(md);
+    highlightCommentsIn(preview);
   }
 
   function updateStats() {
@@ -642,34 +835,169 @@ console.log('Hello!')
     statsEl.textContent = `${words}w · ${lines}l`;
   }
 
-  // ── VIEW MODES ──
-  let currentView = 'split';
+  // ── COMMENT HIGHLIGHTING (// and # at the start of a code line) ──
+  function highlightCommentsIn(container) {
+    const codeBlocks = container.querySelectorAll('pre code');
+    codeBlocks.forEach(block => {
+      const lines = block.innerHTML.split('\n');
+      const processed = lines.map(line => {
+        const trimmed = line.replace(/^\s+/, '');
+        if (trimmed.startsWith('//') || trimmed.startsWith('#')) {
+          return `<span class="code-comment">${line}</span>`;
+        }
+        return line;
+      });
+      block.innerHTML = processed.join('\n');
+    });
+  }
 
+  // ── LIGHT / DARK PREVIEW TOGGLE ──
+  function togglePreviewTheme() {
+    const isDark = document.documentElement.classList.toggle('dark-preview');
+    document.getElementById('theme-toggle-icon').textContent = isDark ? '☀️' : '🌙';
+  }
+
+  // ── VIEW MODES (Split / Editor / Preview / PDF) ──
   function setView(mode) {
     currentView = mode;
     const pE = document.getElementById('pane-editor');
     const pP = document.getElementById('pane-preview');
     const div = document.getElementById('divider');
+    const normalWrap = document.getElementById('preview-wrapper');
+    const pdfWrap = document.getElementById('pdf-preview-wrapper');
+    const labelText = document.getElementById('preview-label-text');
 
     document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`btn-${mode}`).classList.add('active');
 
     pE.style.flex = '';
     pP.style.flex = '';
+    pE.style.overflow = '';
+    pP.style.overflow = '';
     div.style.display = '';
 
     if (mode === 'editor') {
       pP.style.flex = '0';
       pP.style.overflow = 'hidden';
       div.style.display = 'none';
+      normalWrap.style.display = '';
+      pdfWrap.style.display = 'none';
+      labelText.textContent = 'Live Preview';
     } else if (mode === 'preview') {
       pE.style.flex = '0';
       pE.style.overflow = 'hidden';
       div.style.display = 'none';
+      normalWrap.style.display = '';
+      pdfWrap.style.display = 'none';
+      labelText.textContent = 'Live Preview';
+    } else if (mode === 'pdf') {
+      normalWrap.style.display = 'none';
+      pdfWrap.style.display = '';
+      labelText.textContent = 'Live PDF Preview';
+      renderPdfPreview();
     } else {
-      pP.style.overflow = '';
-      pE.style.overflow = '';
+      // split
+      normalWrap.style.display = '';
+      pdfWrap.style.display = 'none';
+      labelText.textContent = 'Live Preview';
     }
+  }
+
+  // ── LIVE PDF PAGE PREVIEW ──
+  function renderPdfPreview() {
+    const pdfPagesEl = document.getElementById('pdf-pages');
+    const md = editor.value.trim();
+
+    if (!md) {
+      pdfPagesEl.innerHTML = '<div class="pdf-empty">Start typing in the editor to see your live PDF page preview…</div>';
+      return;
+    }
+
+    const pageSizeKey = document.getElementById('pdf-page-size').value;
+    const fontSizePx = parseInt(document.getElementById('pdf-font-size').value, 10) || 14;
+    const dims = PDF_PAGE_SIZES[pageSizeKey] || PDF_PAGE_SIZES.a4;
+    const padV = 96;
+    const padH = 96;
+    const contentW = dims.w - padH * 2;
+    const contentH = dims.h - padV * 2;
+
+    // Offscreen stage: render + measure at the exact target width/font-size
+    const stage = document.createElement('div');
+    stage.className = 'md-content';
+    stage.style.position = 'absolute';
+    stage.style.left = '-9999px';
+    stage.style.top = '0';
+    stage.style.visibility = 'hidden';
+    stage.style.width = contentW + 'px';
+    stage.style.fontSize = fontSizePx + 'px';
+    stage.innerHTML = marked.parse(md);
+    document.body.appendChild(stage);
+    highlightCommentsIn(stage);
+
+    const nodes = Array.from(stage.children);
+    const pageGroups = [[]];
+    let heightUsed = 0;
+
+    nodes.forEach(node => {
+      const style = getComputedStyle(node);
+      const marginTop = parseFloat(style.marginTop) || 0;
+      const marginBottom = parseFloat(style.marginBottom) || 0;
+      const total = node.offsetHeight + marginTop + marginBottom;
+
+      if (heightUsed > 0 && heightUsed + total > contentH) {
+        pageGroups.push([]);
+        heightUsed = 0;
+      }
+      pageGroups[pageGroups.length - 1].push(node);
+      heightUsed += total;
+    });
+
+    pdfPagesEl.innerHTML = '';
+    pdfPagesEl.style.setProperty('--pdf-page-w', dims.w + 'px');
+    pdfPagesEl.style.setProperty('--pdf-page-h', dims.h + 'px');
+    pdfPagesEl.style.setProperty('--pdf-pad-v', padV + 'px');
+    pdfPagesEl.style.setProperty('--pdf-pad-h', padH + 'px');
+
+    const totalPages = pageGroups.filter(g => g.length > 0).length || 1;
+    let pageNumber = 0;
+
+    pageGroups.forEach(group => {
+      if (group.length === 0) return;
+      pageNumber++;
+
+      const pageEl = document.createElement('div');
+      pageEl.className = 'pdf-page';
+
+      const contentEl = document.createElement('div');
+      contentEl.className = 'pdf-page-content md-content';
+      contentEl.style.fontSize = fontSizePx + 'px';
+      group.forEach(node => contentEl.appendChild(node));
+      pageEl.appendChild(contentEl);
+
+      const numberEl = document.createElement('div');
+      numberEl.className = 'pdf-page-number';
+      numberEl.textContent = `Page ${pageNumber} of ${totalPages}`;
+      pageEl.appendChild(numberEl);
+
+      pdfPagesEl.appendChild(pageEl);
+    });
+
+    document.body.removeChild(stage);
+  }
+
+  document.getElementById('pdf-page-size').addEventListener('change', () => {
+    if (currentView === 'pdf') renderPdfPreview();
+  });
+  document.getElementById('pdf-font-size').addEventListener('input', () => {
+    document.getElementById('pdf-font-size-label').textContent = document.getElementById('pdf-font-size').value + 'px';
+    if (currentView === 'pdf') renderPdfPreview();
+  });
+
+  // ── SHARED "AFTER EDIT" REFRESH ──
+  function afterEdit() {
+    renderPreview();
+    updateStats();
+    if (currentView === 'pdf') renderPdfPreview();
   }
 
   // ── TOOLBAR HELPERS ──
@@ -680,7 +1008,7 @@ console.log('Hello!')
     const replacement = before + (selected || 'text') + after;
     editor.setRangeText(replacement, start, end, 'select');
     editor.focus();
-    renderPreview();
+    afterEdit();
   }
 
   function insertLine(prefix) {
@@ -693,7 +1021,7 @@ console.log('Hello!')
     const newLine = prefix + (line || 'text');
     editor.setRangeText(newLine, lineStart, end, 'end');
     editor.focus();
-    renderPreview();
+    afterEdit();
   }
 
   function insertLink() {
@@ -703,7 +1031,7 @@ console.log('Hello!')
     const replacement = `[${selected}](https://example.com)`;
     editor.setRangeText(replacement, start, end, 'end');
     editor.focus();
-    renderPreview();
+    afterEdit();
   }
 
   function insertCodeBlock() {
@@ -713,7 +1041,7 @@ console.log('Hello!')
     const replacement = `\`\`\`\n${selected}\n\`\`\``;
     editor.setRangeText(replacement, start, end, 'end');
     editor.focus();
-    renderPreview();
+    afterEdit();
   }
 
   function insertTable() {
@@ -721,7 +1049,37 @@ console.log('Hello!')
     const pos = editor.selectionEnd;
     editor.setRangeText(table, pos, pos, 'end');
     editor.focus();
-    renderPreview();
+    afterEdit();
+  }
+
+  // ── FONT SIZE FOR SELECTED TEXT / WORD ──
+  function changeFontSize(delta) {
+    let start = editor.selectionStart;
+    let end = editor.selectionEnd;
+    const val = editor.value;
+
+    if (start === end) {
+      // No selection: expand to the word under the cursor
+      while (start > 0 && /\S/.test(val[start - 1])) start--;
+      while (end < val.length && /\S/.test(val[end])) end++;
+    }
+
+    const selected = val.substring(start, end);
+    if (!selected.trim()) return;
+
+    const spanMatch = selected.match(/^<span style="font-size:([\d.]+)em">([\s\S]*)<\/span>$/);
+    let size = 1;
+    let inner = selected;
+    if (spanMatch) {
+      size = parseFloat(spanMatch[1]);
+      inner = spanMatch[2];
+    }
+    size = Math.min(3, Math.max(0.5, size + delta));
+
+    const replacement = `<span style="font-size:${size.toFixed(2)}em">${inner}</span>`;
+    editor.setRangeText(replacement, start, end, 'select');
+    editor.focus();
+    afterEdit();
   }
 
   // ── DOWNLOAD ──
@@ -734,21 +1092,26 @@ console.log('Hello!')
     const md = editor.value;
     if (!md.trim()) { showToast('Nothing to save yet!'); return; }
 
+    if (type === 'pdf') {
+      exportPdf();
+      return;
+    }
+
     let content, mime, filename;
 
     if (type === 'md') {
       content = md;
       mime = 'text/markdown';
       filename = getFilename('md');
-    } else if (type === 'txt') {
-      content = md;
-      mime = 'text/plain';
-      filename = getFilename('txt');
     } else if (type === 'html') {
-      const renderedHtml = marked.parse(md);
-      content = buildHtmlDocument(renderedHtml, filename);
-      mime = 'text/html';
       filename = getFilename('html');
+      const temp = document.createElement('div');
+      temp.innerHTML = marked.parse(md);
+      highlightCommentsIn(temp);
+      const isDark = document.documentElement.classList.contains('dark-preview');
+      const titleName = filename.replace(/\.html$/, '');
+      content = buildHtmlDocument(temp.innerHTML, isDark, titleName);
+      mime = 'text/html';
     }
 
     const blob = new Blob([content], { type: `${mime};charset=utf-8` });
@@ -761,7 +1124,7 @@ console.log('Hello!')
     showToast(`Saved as ${filename}`);
   }
 
-  function buildHtmlDocument(body, title) {
+  function buildHtmlDocument(body, isDark, title) {
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -772,28 +1135,41 @@ console.log('Hello!')
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=JetBrains+Mono&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; }
-  body { font-family: 'DM Sans', sans-serif; font-size: 1rem; line-height: 1.8; color: #1a1814; background: #f7f4ee; margin: 0; padding: 48px 24px; }
+  :root {
+    --bg: #f7f4ee; --text: #1a1814; --muted: #6b6560; --border: #ddd8ce; --accent: #c9a227;
+    --code-bg: rgba(0,0,0,0.035); --comment: #948c81;
+    --inline-code-bg: #e8e3da; --inline-code-text: #8b3a3a; --th-bg: #e2dcd3;
+  }
+  body.dark {
+    --bg: #1b1b1b; --text: #e9e5dd; --muted: #9b948b; --border: #3a352f; --accent: #e8c547;
+    --code-bg: rgba(255,255,255,0.045); --comment: #78726a;
+    --inline-code-bg: #33302b; --inline-code-text: #e0937f; --th-bg: #2b2823;
+  }
+  body { font-family: 'DM Sans', sans-serif; font-size: 1rem; line-height: 1.8; color: var(--text); background: var(--bg); margin: 0; padding: 48px 24px; }
   .content { max-width: 760px; margin: 0 auto; }
-  h1,h2,h3,h4,h5,h6 { font-family: 'Playfair Display', serif; line-height: 1.3; margin-top: 2em; margin-bottom: 0.6em; }
-  h1 { font-size: 2.2rem; border-bottom: 2px solid #c9a227; padding-bottom: 10px; }
-  h2 { font-size: 1.65rem; border-bottom: 1px solid #ddd8ce; padding-bottom: 8px; }
-  h3 { font-size: 1.3rem; }
+  h1,h2,h3,h4,h5,h6 { font-family: 'Playfair Display', serif; line-height: 1.3; margin-top: 2em; margin-bottom: 0.6em; color: var(--text); }
+  h1 { font-size: 2.2em; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+  h2 { font-size: 1.65em; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  h3 { font-size: 1.3em; }
   p { margin-bottom: 1.1em; }
-  a { color: #c9a227; }
-  blockquote { border-left: 3px solid #c9a227; padding: 8px 20px; margin: 1.5em 0; background: rgba(201,162,39,0.05); border-radius: 0 6px 6px 0; color: #6b6560; font-style: italic; }
-  code { font-family: 'JetBrains Mono', monospace; font-size: 0.82em; background: #e8e3da; padding: 2px 6px; border-radius: 4px; color: #8b3a3a; }
-  pre { background: #1a1814; color: #e8e4dc; padding: 20px 24px; border-radius: 8px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.83rem; line-height: 1.65; }
+  a { color: var(--accent); }
+  strong { font-weight: 600; }
+  em { font-style: italic; color: var(--muted); }
+  blockquote { border-left: 3px solid var(--accent); padding: 8px 20px; margin: 1.5em 0; background: rgba(201,162,39,0.05); border-radius: 0 6px 6px 0; color: var(--muted); font-style: italic; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 0.82em; background: var(--inline-code-bg); padding: 2px 6px; border-radius: 4px; color: var(--inline-code-text); }
+  pre { background: var(--code-bg); border: 2px dashed var(--border); color: var(--text); padding: 20px 24px; border-radius: 8px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.83em; line-height: 1.65; }
   pre code { background: none; padding: 0; color: inherit; }
+  pre .code-comment { color: var(--comment); }
   ul, ol { padding-left: 24px; margin-bottom: 1.1em; }
   li { margin-bottom: 0.35em; }
   table { width: 100%; border-collapse: collapse; margin: 1.5em 0; }
-  th { background: #e2dcd3; padding: 10px 16px; text-align: left; font-weight: 600; border-bottom: 2px solid #ddd8ce; }
-  td { padding: 9px 16px; border-bottom: 1px solid #ddd8ce; }
-  hr { border: none; border-top: 1px solid #ddd8ce; margin: 2em 0; }
+  th { background: var(--th-bg); padding: 10px 16px; text-align: left; font-weight: 600; border-bottom: 2px solid var(--border); }
+  td { padding: 9px 16px; border-bottom: 1px solid var(--border); }
+  hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
   img { max-width: 100%; border-radius: 6px; }
 </style>
 </head>
-<body>
+<body class="${isDark ? 'dark' : ''}">
 <div class="content">
 ${body}
 </div>
@@ -801,12 +1177,67 @@ ${body}
 </html>`;
   }
 
+  // ── PDF EXPORT (uses the same live paginated layout as the PDF preview) ──
+  function exportPdf() {
+    if (!editor.value.trim()) { showToast('Nothing to save yet!'); return; }
+    if (typeof html2pdf === 'undefined') {
+      showToast('PDF engine failed to load — check your connection');
+      return;
+    }
+
+    renderPdfPreview();
+
+    const pageSizeKey = document.getElementById('pdf-page-size').value;
+    const dims = PDF_PAGE_SIZES[pageSizeKey] || PDF_PAGE_SIZES.a4;
+    const filename = getFilename('pdf');
+
+    const source = document.getElementById('pdf-pages').cloneNode(true);
+    const pages = source.querySelectorAll('.pdf-page');
+    pages.forEach((page, i) => {
+      page.style.boxShadow = 'none';
+      page.style.borderRadius = '0';
+      page.style.margin = '0';
+      if (i < pages.length - 1) {
+        page.style.pageBreakAfter = 'always';
+        page.style.breakAfter = 'page';
+      }
+    });
+    source.style.display = 'block';
+    source.style.gap = '0';
+    source.style.padding = '0';
+    source.style.overflow = 'visible';
+    source.style.position = 'fixed';
+    source.style.left = '-10000px';
+    source.style.top = '0';
+    document.body.appendChild(source);
+
+    showToast('Generating PDF…');
+
+    const opt = {
+      margin: 0,
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'px', format: [dims.w, dims.h], orientation: 'portrait' },
+      pagebreak: { mode: ['css'] }
+    };
+
+    html2pdf().set(opt).from(source).save().then(() => {
+      if (source.parentNode) document.body.removeChild(source);
+      showToast(`Saved as ${filename}`);
+    }).catch(() => {
+      if (source.parentNode) document.body.removeChild(source);
+      showToast('PDF export failed — please try again');
+    });
+  }
+
   // ── TOAST ──
   function showToast(msg) {
     const toast = document.getElementById('toast');
     document.getElementById('toast-msg').textContent = msg;
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2800);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
   }
 
   // ── CLEAR ──
@@ -815,6 +1246,7 @@ ${body}
       editor.value = '';
       renderPreview();
       updateStats();
+      if (currentView === 'pdf') renderPdfPreview();
     }
   }
 
@@ -823,8 +1255,8 @@ ${body}
   const workspace = document.getElementById('workspace');
   let dragging = false;
 
-  divider.addEventListener('mousedown', e => {
-    if (currentView !== 'split') return;
+  divider.addEventListener('mousedown', () => {
+    if (currentView !== 'split' && currentView !== 'pdf') return;
     dragging = true;
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
@@ -845,7 +1277,7 @@ ${body}
     document.body.style.userSelect = '';
   });
 
-  // ── KEYBOARD SHORTCUTS ──
+  // ── KEYBOARD SHORTCUTS (global) ──
   document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();
@@ -857,12 +1289,22 @@ ${body}
     }
   });
 
-  // ── TAB SUPPORT ──
+  // ── EDITOR-SPECIFIC KEYS: Tab indent + Shift+Enter forced line break ──
   editor.addEventListener('keydown', e => {
     if (e.key === 'Tab') {
       e.preventDefault();
       const start = editor.selectionStart;
       editor.setRangeText('  ', start, start, 'end');
+      afterEdit();
+      return;
+    }
+    if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault();
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      editor.setRangeText('<br>\n', start, end, 'end');
+      afterEdit();
+      return;
     }
   });
 
