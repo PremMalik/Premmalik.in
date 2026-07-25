@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SendWitch — P2P File Transfer by premmalik.in</title>
+  <!-- Google Fonts for JetBrains Mono & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- PeerJS for WebSockets/WebRTC signaling relay -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #050505;
+      --card-bg: #0d0d0d;
+      --card-border: #222222;
+      --card-border-hover: #333333;
+      --input-bg: #000000;
+      --input-border: #2a2a2a;
+      --text-main: #f0f0f0;
+      --text-dim: #888888;
+      --text-muted: #555555;
+      --accent-gray: #333333;
+      --accent-gray-hover: #444444;
+      --button-bg: #2a2a2a;
+      --button-bg-hover: #3a3a3a;
+      --button-disabled: #181818;
+      --accent-green: #10b981;
+      --accent-blue: #3b82f6;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Brand Header */
+    .brand-header {
+      width: 100%;
+      max-width: 1080px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding: 0 4px;
+    }
+
+    .brand-title {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #ffffff;
+    }
+
+    .brand-title .logo-badge {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #aaa;
+      font-weight: 500;
+    }
+
+    .relay-status {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #0f0f0f;
+      border: 1px solid #222;
+      padding: 6px 12px;
+      border-radius: 4px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--accent-green);
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+    }
+
+    .status-dot.connecting {
+      background-color: #f59e0b;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+    }
+
+    /* Main Container Grid matching UI.png */
+    .app-container {
+      width: 100%;
+      max-width: 1080px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      min-height: 520px;
+      justify-content: space-between;
+    }
+
+    /* Card Header */
+    .card-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .step-number {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      border: 1px solid var(--card-border-hover);
+      padding: 2px 7px;
+      border-radius: 2px;
+      background: #141414;
+    }
+
+    .card-title {
+      font-family: var(--font-mono);
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+
+    .card-icon {
+      color: var(--text-dim);
+      width: 20px;
+      height: 20px;
+    }
+
+    .card-subtitle {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 28px;
+    }
+
+    /* Drop Zone */
+    .drop-zone {
+      border: 1px dashed #383838;
+      background: #080808;
+      padding: 44px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      min-height: 150px;
+    }
+
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: #666666;
+      background: #0f0f0f;
+    }
+
+    .drop-title {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+
+    .drop-sub {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* File Metadata Summary */
+    .file-meta-row {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 24px;
+      padding: 0 2px;
+    }
+
+    /* Selected Files List */
+    .selected-files-list {
+      max-height: 120px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #111;
+      border: 1px solid #222;
+      padding: 8px 12px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .file-item-name {
+      color: #ddd;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 260px;
+    }
+
+    .file-item-size {
+      color: #777;
+    }
+
+    .file-item-remove {
+      color: #888;
+      cursor: pointer;
+      margin-left: 10px;
+      font-size: 14px;
+    }
+    .file-item-remove:hover {
+      color: #ef4444;
+    }
+
+    /* Input Field Labels */
+    .field-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+
+    /* Code Input Box Group */
+    .code-input-group {
+      display: flex;
+      width: 100%;
+      margin-bottom: 8px;
+    }
+
+    .code-input {
+      flex: 1;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      color: #ffffff;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      padding: 14px 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .code-input:focus {
+      border-color: #555555;
+    }
+
+    .code-btn {
+      background: #161616;
+      border: 1px solid var(--input-border);
+      border-left: none;
+      color: #aaaaaa;
+      width: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .code-btn:hover {
+      background: #222222;
+      color: #ffffff;
+    }
+
+    .code-help-text {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* Action Buttons */
+    .action-btn {
+      width: 100%;
+      padding: 16px;
+      background: var(--button-bg);
+      color: #ffffff;
+      border: none;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: background 0.2s, opacity 0.2s;
+      margin-top: auto;
+    }
+
+    .action-btn:hover:not(:disabled) {
+      background: var(--button-bg-hover);
+    }
+
+    .action-btn:disabled {
+      background: var(--button-disabled);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e1e1e;
+      border: 1px solid #333;
+      color: #fff;
+      padding: 12px 20px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      border-radius: 4px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Progress Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-box {
+      background: #0d0d0d;
+      border: 1px solid #2a2a2a;
+      width: 100%;
+      max-width: 480px;
+      padding: 32px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+    }
+
+    .modal-title {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-subtitle {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 24px;
+      word-break: break-all;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: #1a1a1a;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: #ffffff;
+      transition: width 0.15s ease;
+    }
+
+    .progress-stats {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 24px;
+    }
+
+    .modal-cancel-btn {
+      width: 100%;
+      padding: 12px;
+      background: #1c1c1c;
+      border: 1px solid #333;
+      color: #ccc;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .modal-cancel-btn:hover {
+      background: #282828;
+      color: #fff;
+    }
+
+    /* Footer text */
+    .footer-notes {
+      margin-top: 24px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .footer-notes a {
+      color: #888;
+      text-decoration: underline;
+    }
+
+    /* Lightweight, utilitarian treatment based on the supplied reference. */
+    body { padding: 16px; }
+    .brand-header { max-width: 1080px; margin-bottom: 10px; padding: 0; }
+    .brand-title { font-size: 14px; letter-spacing: 0; }
+    .brand-title .logo-badge, .relay-status { display: none; }
+    .app-container { max-width: 1080px; gap: 0; border: 1px solid #d5d5d5; }
+    .card { background: #000; border: 0; border-radius: 0; padding: 26px; min-height: 590px; }
+    .card + .card { border-left: 1px solid #d5d5d5; }
+    .card-title-group { gap: 14px; }
+    .step-number { background: transparent; border-color: #555; border-radius: 0; padding: 4px 8px; }
+    .card-title { font-size: 22px; letter-spacing: 0; }
+    .card-subtitle { font-size: 12px; margin-bottom: 26px; }
+    .drop-zone { background: #000; border-color: #555; min-height: 112px; padding: 28px 16px; }
+    .drop-title { font-size: 16px; }
+    .drop-sub, .code-help-text { font-size: 11px; }
+    .file-meta-row { margin-bottom: 26px; }
+    .code-input, .code-btn { border-color: #555; border-radius: 0; }
+    .code-input { padding: 13px 12px; }
+    .code-btn { background: #000; }
+    .file-item-remove { background: transparent; border: 0; font-family: inherit; }
+    .action-btn { padding: 14px; border-radius: 0; }
+    @media (max-width: 768px) {
+      .app-container { border: 0; gap: 12px; }
+      .card { border: 1px solid #d5d5d5; min-height: 500px; }
+      .card + .card { border-left: 1px solid #d5d5d5; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header / Brand -->
+  <header class="brand-header">
+    <div class="brand-title">
+      S e n d W i t c h 
+      <span class="logo-badge">P2P FILE TRANSFER</span>
+    </div>
+    <div class="relay-status" id="relayStatus">
+      <span class="status-dot connecting" id="statusDot"></span>
+      <span id="statusText">Connecting to relay...</span>
+    </div>
+  </header>
+
+  <!-- Dual Panel Layout matching UI.png -->
+  <main class="app-container">
+    
+    <!-- 01 SEND CARD -->
+    <section class="card">
+      <div>
+        <div class="card-header-row">
+          <div class="card-title-group">
+            <span class="step-number">01</span>
+            <h2 class="card-title">Send</h2>
+          </div>
+          <!-- Upload SVG Icon -->
+          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+        </div>
+        <p class="card-subtitle">Choose several files. Share one transfer code.</p>
+
+        <!-- Drag and Drop Zone -->
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-title">Choose files</div>
+          <div class="drop-sub">or drop them here</div>
+          <input type="file" id="fileInput" multiple style="display: none;">
+        </div>
+
+        <!-- Selected Files Preview List -->
+        <div class="selected-files-list" id="selectedFilesList"></div>
+
+        <!-- File Metadata Row -->
+        <div class="file-meta-row">
+          <span id="fileCountText">0 files</span>
+          <span id="fileSizeText">0 B</span>
+        </div>
+
+        <!-- Code Input Group -->
+        <div class="field-label">TRANSFER CODE</div>
+        <div class="code-input-group">
+          <input type="text" id="sendCodeInput" class="code-input" readonly autocomplete="off">
+          <button class="code-btn" id="refreshCodeBtn" title="Regenerate code">
+            <!-- Refresh Icon -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6"></path>
+              <path d="M1 20v-6h6"></path>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+          </button>
+          <button class="code-btn" id="copyCodeBtn" title="Copy code">
+            <!-- Copy Icon -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <button class="action-btn" id="sendBtn" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="19" x2="12" y2="5"></line>
+          <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+        Send files
+      </button>
+    </section>
+
+    <!-- 02 RECEIVE CARD -->
+    <section class="card">
+      <div>
+        <div class="card-header-row">
+          <div class="card-title-group">
+            <span class="step-number">02</span>
+            <h2 class="card-title">Receive</h2>
+          </div>
+          <!-- Download SVG Icon -->
+          <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </div>
+        <p class="card-subtitle">Enter the sender's code. Files download as they arrive.</p>
+
+        <!-- Code Input Group -->
+        <div class="field-label">TRANSFER CODE</div>
+        <div class="code-input-group">
+          <input type="text" id="receiveCodeInput" class="code-input" placeholder="1234-word-word-word" autocomplete="off" spellcheck="false">
+        </div>
+        <p class="code-help-text">Paste the same code shown by the sender's browser or terminal.</p>
+      </div>
+
+      <!-- Action Button -->
+      <button class="action-btn" id="receiveBtn" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <polyline points="19 12 12 19 5 12"></polyline>
+        </svg>
+        Receive
+      </button>
+    </section>
+
+  </main>
+
+  <footer class="footer-notes">
+    Built by <strong>premmalik.in</strong>
+  </footer>
+
+  <!-- Toast Element -->
+  <div class="toast" id="toast">Code copied to clipboard</div>
+
+  <!-- Progress Modal -->
+  <div class="modal-overlay" id="progressModal">
+    <div class="modal-box">
+      <div class="modal-title" id="modalTitle">
+        <span>Transferring...</span>
+        <span id="modalPercentage">0%</span>
+      </div>
+      <div class="modal-subtitle" id="modalSubtitle">Initializing connection to peer...</div>
+
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="progressBarFill"></div>
+      </div>
+
+      <div class="progress-stats">
+        <span id="transferSpeed">0 KB/s</span>
+        <span id="transferMeta">0 MB / 0 MB</span>
+      </div>
+
+      <button class="modal-cancel-btn" id="modalCancelBtn">Cancel Transfer</button>
+    </div>
+  </div>
+
+  <script>
+    // --- Word list for transfer-code generation (4-digit prefix + 3 words) ---
+    const WORD_LIST = [
+      "hilton", "precise", "jimmy", "crimson", "swift", "falcon", "orbit", "beacon", "shadow", "matrix",
+      "cipher", "vortex", "quantum", "cobalt", "amber", "lunar", "stellar", "nebula", "zenith", "vertex",
+      "solaris", "titan", "aurora", "phoenix", "hyper", "vector", "delta", "pulse", "echo", "nexus"
+    ];
+
+    function generateCrocCode() {
+      const prefix = Math.floor(1000 + Math.random() * 9000);
+      const w1 = WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)];
+      const w2 = WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)];
+      const w3 = WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)];
+      return `${prefix}-${w1}-${w2}-${w3}`;
+    }
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // --- State Variables ---
+    let selectedFiles = [];
+    let currentCode = generateCrocCode();
+    let peer = null;
+    let peerConnection = null;
+    let codePeer = null;
+    let isTransferring = false;
+    let currentTransferData = null;
+
+    // --- DOM Elements ---
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const selectedFilesList = document.getElementById('selectedFilesList');
+    const fileCountText = document.getElementById('fileCountText');
+    const fileSizeText = document.getElementById('fileSizeText');
+    const sendCodeInput = document.getElementById('sendCodeInput');
+    const refreshCodeBtn = document.getElementById('refreshCodeBtn');
+    const copyCodeBtn = document.getElementById('copyCodeBtn');
+    const sendBtn = document.getElementById('sendBtn');
+    const receiveCodeInput = document.getElementById('receiveCodeInput');
+    const receiveBtn = document.getElementById('receiveBtn');
+    const toast = document.getElementById('toast');
+    const relayStatus = document.getElementById('relayStatus');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+
+    // Progress Modal DOM
+    const progressModal = document.getElementById('progressModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalSubtitle = document.getElementById('modalSubtitle');
+    const modalPercentage = document.getElementById('modalPercentage');
+    const progressBarFill = document.getElementById('progressBarFill');
+    const transferSpeed = document.getElementById('transferSpeed');
+    const transferMeta = document.getElementById('transferMeta');
+    const modalCancelBtn = document.getElementById('modalCancelBtn');
+
+    // Init UI
+    sendCodeInput.value = currentCode;
+
+    // --- PeerJS Relay Initialization ---
+    function initRelay() {
+      // Create a unique local peer ID prefix to avoid collisions
+      const localId = 'premmalik-transfer-' + Math.random().toString(36).substring(2, 9);
+      peer = new Peer(localId, {
+        debug: 1
+      });
+
+      peer.on('open', (id) => {
+        statusDot.className = 'status-dot';
+        statusText.textContent = 'Relay connected';
+      });
+
+      peer.on('error', (err) => {
+        console.warn('Relay WebSocket warning:', err);
+        statusDot.className = 'status-dot connecting';
+        statusText.textContent = 'Relay unavailable';
+      });
+
+      peer.on('connection', (conn) => {
+        handleIncomingPeerConnection(conn);
+      });
+    }
+
+    initRelay();
+
+    // --- Toast Function ---
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    // --- Code Actions ---
+    refreshCodeBtn.addEventListener('click', () => {
+      if (isTransferring) {
+        showToast('Finish or cancel the current transfer first');
+        return;
+      }
+      currentCode = generateCrocCode();
+      sendCodeInput.value = currentCode;
+      showToast('New code generated');
+    });
+
+    copyCodeBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(sendCodeInput.value).then(() => {
+        showToast('Code copied to clipboard');
+      }).catch(() => {
+        showToast('Code copied!');
+      });
+    });
+
+    // --- File Selection & Drag-and-Drop ---
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      if (e.dataTransfer.files.length) {
+        addFiles(Array.from(e.dataTransfer.files));
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) {
+        addFiles(Array.from(e.target.files));
+      }
+    });
+
+    function addFiles(files) {
+      const existing = new Set(selectedFiles.map(file => `${file.name}:${file.size}:${file.lastModified}`));
+      selectedFiles = selectedFiles.concat(files.filter(file => {
+        const key = `${file.name}:${file.size}:${file.lastModified}`;
+        if (existing.has(key)) return false;
+        existing.add(key);
+        return true;
+      }));
+      fileInput.value = '';
+      renderFileList();
+    }
+
+    function removeFile(index) {
+      selectedFiles.splice(index, 1);
+      renderFileList();
+    }
+
+    function renderFileList() {
+      selectedFilesList.innerHTML = '';
+      let totalSize = 0;
+
+      selectedFiles.forEach((file, index) => {
+        totalSize += file.size;
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        const name = document.createElement('span');
+        name.className = 'file-item-name';
+        name.title = file.name;
+        name.textContent = file.name;
+        const details = document.createElement('div');
+        const size = document.createElement('span');
+        size.className = 'file-item-size';
+        size.textContent = formatBytes(file.size);
+        const remove = document.createElement('button');
+        remove.className = 'file-item-remove';
+        remove.type = 'button';
+        remove.setAttribute('aria-label', `Remove ${file.name}`);
+        remove.textContent = '×';
+        remove.addEventListener('click', () => removeFile(index));
+        details.append(size, remove);
+        item.append(name, details);
+        selectedFilesList.appendChild(item);
+      });
+
+      fileCountText.textContent = `${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'}`;
+      fileSizeText.textContent = formatBytes(totalSize);
+
+      sendBtn.disabled = selectedFiles.length === 0;
+    }
+
+    receiveCodeInput.addEventListener('input', () => {
+      const code = receiveCodeInput.value.trim();
+      receiveBtn.disabled = code.length < 5;
+    });
+
+    // --- Send Action ---
+    sendBtn.addEventListener('click', () => {
+      if (selectedFiles.length === 0) return;
+      if (isTransferring) return;
+      isTransferring = true;
+      sendBtn.disabled = true;
+      openProgressModal('Waiting for receiver...', `Share code: ${currentCode}`);
+      
+      // Register peer ID for this code
+      const peerCodeId = 'premmalik-code-' + currentCode.replace(/[^a-zA-Z0-9]/g, '');
+      
+      try {
+        codePeer = new Peer(peerCodeId, { debug: 1 });
+        codePeer.on('connection', (conn) => {
+          handleIncomingPeerConnection(conn);
+        });
+        codePeer.on('error', (err) => {
+          console.error(err);
+          updateProgressModal('Connection Error', 'This transfer code could not be registered.', 0);
+          isTransferring = false;
+          renderFileList();
+        });
+      } catch (e) {
+        console.error(e);
+        isTransferring = false;
+        renderFileList();
+      }
+    });
+
+    function handleIncomingPeerConnection(conn) {
+      peerConnection = conn;
+      conn.on('open', () => {
+        if (!isTransferring) {
+          conn.close();
+          return;
+        }
+        updateProgressModal('Connected to peer!', `Sending ${selectedFiles.length} file(s)...`, 0);
+        sendFileDataOverDataChannel(conn).catch((error) => {
+          console.error(error);
+          updateProgressModal('Transfer Error', 'The connection closed before the files were sent.', 0);
+          setTimeout(finishTransfer, 2500);
+        });
+      });
+    }
+
+    // Send file data in binary chunks (64KB chunks)
+    async function sendFileDataOverDataChannel(conn) {
+      const CHUNK_SIZE = 64 * 1024;
+      let totalBytesAllFiles = selectedFiles.reduce((acc, f) => acc + f.size, 0);
+      let sentBytesAllFiles = 0;
+      let startTime = Date.now();
+
+      // Send Header Manifest
+      const manifest = {
+        type: 'MANIFEST',
+        files: selectedFiles.map(f => ({ name: f.name, size: f.size, type: f.type }))
+      };
+      conn.send(JSON.stringify(manifest));
+
+      for (let fIndex = 0; fIndex < selectedFiles.length; fIndex++) {
+        const file = selectedFiles[fIndex];
+        let offset = 0;
+
+        // Send File Start Signal
+        conn.send(JSON.stringify({ type: 'FILE_START', index: fIndex, name: file.name, size: file.size, fileType: file.type }));
+
+        while (offset < file.size) {
+          if (!conn.open) throw new Error('Connection closed');
+          const chunk = await file.slice(offset, offset + CHUNK_SIZE).arrayBuffer();
+          conn.send(chunk);
+          offset += chunk.byteLength;
+          sentBytesAllFiles += chunk.byteLength;
+
+          const progress = Math.round((sentBytesAllFiles / totalBytesAllFiles) * 100);
+          const elapsedTime = (Date.now() - startTime) / 1000;
+          const speed = elapsedTime > 0 ? (sentBytesAllFiles / elapsedTime) : 0;
+
+          updateProgressModal(
+            'Sending files...',
+            `Sending file ${fIndex + 1} of ${selectedFiles.length}: ${file.name}`,
+            progress,
+            `${formatBytes(speed)}/s`,
+            `${formatBytes(sentBytesAllFiles)} / ${formatBytes(totalBytesAllFiles)}`
+          );
+
+          await waitForChannelCapacity(conn);
+        }
+
+        conn.send(JSON.stringify({ type: 'FILE_END', index: fIndex }));
+      }
+
+      conn.send(JSON.stringify({ type: 'TRANSFER_COMPLETE' }));
+      updateProgressModal('Transfer Complete!', 'All files sent successfully.', 100);
+      setTimeout(finishTransfer, 3000);
+    }
+
+    function waitForChannelCapacity(conn) {
+      const channel = conn.dataChannel;
+      if (!channel || channel.bufferedAmount < 512 * 1024) return Promise.resolve();
+      return new Promise(resolve => {
+        const check = () => channel.bufferedAmount < 256 * 1024 ? resolve() : setTimeout(check, 20);
+        check();
+      });
+    }
+
+    function finishTransfer() {
+      isTransferring = false;
+      if (peerConnection && peerConnection.open) peerConnection.close();
+      peerConnection = null;
+      if (codePeer) {
+        codePeer.destroy();
+        codePeer = null;
+      }
+      closeProgressModal();
+      renderFileList();
+    }
+
+    // --- Receive Action ---
+    receiveBtn.addEventListener('click', () => {
+      const code = receiveCodeInput.value.trim();
+      if (!code || !peer || peer.disconnected) {
+        showToast('The relay is not ready. Try again shortly.');
+        return;
+      }
+
+      openProgressModal('Connecting to sender...', `Looking up transfer code: ${code}`);
+
+      const targetPeerId = 'premmalik-code-' + code.replace(/[^a-zA-Z0-9]/g, '');
+      const conn = peer.connect(targetPeerId);
+      peerConnection = conn;
+      receiveBtn.disabled = true;
+
+      let receivedFiles = [];
+      let currentFileBuffer = [];
+      let currentFileInfo = null;
+      let totalExpectedBytes = 0;
+      let totalReceivedBytes = 0;
+      let startTime = Date.now();
+
+      conn.on('open', () => {
+        updateProgressModal('Connected to sender!', 'Receiving file metadata...', 0);
+      });
+
+      conn.on('data', (data) => {
+        if (typeof data === 'string') {
+          let msg;
+          try {
+            msg = JSON.parse(data);
+          } catch {
+            updateProgressModal('Transfer Error', 'Received invalid transfer metadata.', 0);
+            conn.close();
+            return;
+          }
+
+          if (msg.type === 'MANIFEST') {
+            totalExpectedBytes = msg.files.reduce((acc, f) => acc + f.size, 0);
+          } else if (msg.type === 'FILE_START') {
+            currentFileInfo = msg;
+            currentFileBuffer = [];
+          } else if (msg.type === 'FILE_END') {
+            if (!currentFileInfo) return;
+            const blob = new Blob(currentFileBuffer, { type: currentFileInfo.fileType || 'application/octet-stream' });
+            downloadFileBlob(blob, currentFileInfo.name);
+            receivedFiles.push(currentFileInfo.name);
+          } else if (msg.type === 'TRANSFER_COMPLETE') {
+            updateProgressModal('Transfer Complete!', `Received ${receivedFiles.length} file(s).`, 100);
+            setTimeout(() => closeProgressModal(), 2500);
+          }
+        } else if (data instanceof ArrayBuffer || ArrayBuffer.isView(data) || data instanceof Blob) {
+          if (!currentFileInfo) return;
+          const bytes = data instanceof Blob ? data.size : data.byteLength;
+          currentFileBuffer.push(data);
+          totalReceivedBytes += bytes;
+
+          const progress = totalExpectedBytes > 0 ? Math.round((totalReceivedBytes / totalExpectedBytes) * 100) : 50;
+          const elapsedTime = (Date.now() - startTime) / 1000;
+          const speed = elapsedTime > 0 ? (totalReceivedBytes / elapsedTime) : 0;
+
+          updateProgressModal(
+            'Receiving files...',
+            currentFileInfo ? `Receiving: ${currentFileInfo.name}` : 'Downloading data...',
+            progress,
+            `${formatBytes(speed)}/s`,
+            `${formatBytes(totalReceivedBytes)} / ${formatBytes(totalExpectedBytes)}`
+          );
+        }
+      });
+
+      conn.on('error', (err) => {
+        console.error(err);
+        updateProgressModal('Connection Error', 'Could not connect to sender with this code.', 0);
+        receiveBtn.disabled = false;
+      });
+      conn.on('close', () => {
+        if (peerConnection === conn) peerConnection = null;
+        receiveBtn.disabled = receiveCodeInput.value.trim().length < 5;
+      });
+    });
+
+    function downloadFileBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    // --- Modal Progress UI Helper ---
+    function openProgressModal(title, subtitle) {
+      modalTitle.querySelector('span').textContent = title;
+      modalSubtitle.textContent = subtitle;
+      modalPercentage.textContent = '0%';
+      progressBarFill.style.width = '0%';
+      transferSpeed.textContent = '0 KB/s';
+      transferMeta.textContent = '0 B / 0 B';
+      progressModal.classList.add('active');
+    }
+
+    function updateProgressModal(title, subtitle, percent, speedText = '', metaText = '') {
+      modalTitle.querySelector('span').textContent = title;
+      if (subtitle) modalSubtitle.textContent = subtitle;
+      modalPercentage.textContent = `${percent}%`;
+      progressBarFill.style.width = `${percent}%`;
+      if (speedText) transferSpeed.textContent = speedText;
+      if (metaText) transferMeta.textContent = metaText;
+    }
+
+    function closeProgressModal() {
+      progressModal.classList.remove('active');
+    }
+
+    modalCancelBtn.addEventListener('click', () => {
+      if (peerConnection) {
+        peerConnection.close();
+      }
+      if (isTransferring) {
+        finishTransfer();
+      } else {
+        closeProgressModal();
+      }
+    });
+  </script>
+</body>
+</html>
