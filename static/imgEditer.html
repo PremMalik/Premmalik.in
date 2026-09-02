@@ -164,6 +164,27 @@
             font-size: 1.25rem;
         }
 
+        .step-label {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .input-row .input-group {
+            flex: 1;
+        }
+
         .input-group {
             margin-bottom: 15px;
         }
@@ -365,6 +386,7 @@
             main { padding: 15px; }
             .controls-section { grid-template-columns: 1fr; }
             .preview-section { grid-template-columns: 1fr; }
+            .input-row { flex-direction: column; gap: 0; }
         }
     </style>
 </head>
@@ -397,30 +419,31 @@
 
             <section class="controls-section">
                 <div class="control-group">
-                    <h2>Resize Image</h2>
-                    <div class="input-group">
-                        <label for="widthInput">Width (px):</label>
-                        <input type="number" id="widthInput" min="1" placeholder="Enter width">
-                    </div>
-                    <div class="input-group">
-                        <label for="heightInput">Height (px):</label>
-                        <input type="number" id="heightInput" min="1" placeholder="Enter height">
+                    <!-- <h2><span class="step-label">1</span>Width &amp; Height</h2> -->
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="widthInput">Width (px):</label>
+                            <input type="number" id="widthInput" min="1" placeholder="Enter width">
+                        </div>
+                        <div class="input-group">
+                            <label for="heightInput">Height (px):</label>
+                            <input type="number" id="heightInput" min="1" placeholder="Enter height">
+                        </div>
                     </div>
                     <div class="checkbox-group">
                         <input type="checkbox" id="aspectRatioCheckbox" checked>
                         <label for="aspectRatioCheckbox">Maintain aspect ratio</label>
                     </div>
-                    <div class="input-group">
-                        <label for="scaleInput">Scale by percentage:</label>
-                        <input type="number" id="scaleInput" min="1" max="1000" placeholder="Enter percentage (e.g. 50)">
-                    </div>
-                    <button class="btn btn-secondary" id="resizeBtn" disabled>Resize Image</button>
-                </div>
 
-                <div class="control-group">
-                    <h2>Convert Format</h2>
+                    <!-- <h2><span class="step-label">2</span>Scale (optional)</h2> -->
                     <div class="input-group">
-                        <label for="formatSelect">Target Format:</label>
+                        <label for="scaleInput">Scale the above size by percentage:</label>
+                        <input type="number" id="scaleInput" min="1" max="1000" placeholder="e.g. 50 for half size (leave blank to skip)">
+                    </div>
+
+                    <!-- <h2><span class="step-label">3</span>Target Format</h2> -->
+                    <div class="input-group">
+                        <label for="formatSelect">Convert to:</label>
                         <select id="formatSelect">
                             <option value="jpeg">JPEG</option>
                             <option value="jpg">JPG</option>
@@ -428,7 +451,8 @@
                             <option value="pdf">PDF</option>
                         </select>
                     </div>
-                    <button class="btn btn-secondary" id="convertBtn" disabled>Convert Format</button>
+
+                    <button class="btn btn-secondary" id="processBtn" disabled>Resize & Convert</button>
                 </div>
             </section>
 
@@ -473,10 +497,11 @@
     <script>
         // Global variables
         let originalImage = null;
-        let processedImage = null;
-        let originalImageData = null;
         let processedImageData = null;
-        let isPdfResult = false; // Flag to check if current result is PDF
+        let isPdfResult = false;   // Flag to check if current result is PDF
+        let pdfImageData = null;  // Cached JPEG data used to build the PDF
+        let pdfWidth = 0;
+        let pdfHeight = 0;
 
         // DOM Elements
         const dropArea = document.getElementById('dropArea');
@@ -486,9 +511,8 @@
         const heightInput = document.getElementById('heightInput');
         const aspectRatioCheckbox = document.getElementById('aspectRatioCheckbox');
         const scaleInput = document.getElementById('scaleInput');
-        const resizeBtn = document.getElementById('resizeBtn');
         const formatSelect = document.getElementById('formatSelect');
-        const convertBtn = document.getElementById('convertBtn');
+        const processBtn = document.getElementById('processBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const originalPreview = document.getElementById('originalPreview');
         const processedPreview = document.getElementById('processedPreview');
@@ -504,11 +528,10 @@
         fileInput.addEventListener('change', handleFileSelect);
         dropArea.addEventListener('dragover', handleDragOver);
         dropArea.addEventListener('drop', handleDrop);
-        resizeBtn.addEventListener('click', resizeImage);
-        convertBtn.addEventListener('click', convertFormat);
+        processBtn.addEventListener('click', processImage);
         downloadBtn.addEventListener('click', downloadImage);
 
-        // Auto-update height/width when aspect ratio is on
+        // Auto-update height/width when aspect ratio is on (step 1 only - scale is applied on top in step 2)
         widthInput.addEventListener('input', () => {
             if (aspectRatioCheckbox.checked && originalImage && widthInput.value) {
                 const ratio = originalImage.height / originalImage.width;
@@ -595,12 +618,12 @@
                         originalSize.textContent = `${(file.size / 1024).toFixed(2)} KB`;
                         originalResolution.textContent = `${originalImage.width} × ${originalImage.height}px`;
                         
-                        // Populate default input values
+                        // Populate default input values (step 1 base size = original size)
                         widthInput.value = originalImage.width;
                         heightInput.value = originalImage.height;
+                        scaleInput.value = '';
                         
-                        resizeBtn.disabled = false;
-                        convertBtn.disabled = false;
+                        processBtn.disabled = false;
                         downloadBtn.disabled = true;
                         
                         resetProcessedPreview();
@@ -625,147 +648,101 @@
             reader.readAsDataURL(file);
         }
 
-        // Resize image
-        function resizeImage() {
+        // Single pipeline: (1) width/height -> (2) scale % on top -> (3) target format
+        function processImage() {
             if (!originalImage) {
                 showMessage('Please load an image first', 'error');
                 return;
             }
 
-            const width = parseInt(widthInput.value);
-            const height = parseInt(heightInput.value);
+            const width = parseInt(widthInput.value, 10);
+            const height = parseInt(heightInput.value, 10);
+            const scaleProvided = scaleInput.value !== '' && scaleInput.value !== null;
             const scale = parseFloat(scaleInput.value);
-            
-            if (scale && (scale <= 0 || isNaN(scale))) {
-                showMessage('Please enter a valid scale percentage', 'error');
-                return;
-            }
-            
-            if (!scale && (width < 1 || height < 1)) {
+            const targetFormat = formatSelect.value;
+
+            if (!width || !height || width < 1 || height < 1) {
                 showMessage('Width and height must be positive numbers', 'error');
                 return;
             }
 
-            try {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                let newWidth, newHeight;
-                
-                if (scale && scale > 0) {
-                    newWidth = Math.round(originalImage.width * (scale / 100));
-                    newHeight = Math.round(originalImage.height * (scale / 100));
-                } else if (aspectRatioCheckbox.checked) {
-                    const ratio = originalImage.width / originalImage.height;
-                    if (width > 0) {
-                        newWidth = width;
-                        newHeight = Math.round(width / ratio);
-                    } else {
-                        newHeight = height;
-                        newWidth = Math.round(height * ratio);
-                    }
-                } else {
-                    newWidth = width || originalImage.width;
-                    newHeight = height || originalImage.height;
-                }
-
-                canvas.width = newWidth;
-                canvas.height = newHeight;
-                ctx.drawImage(originalImage, 0, 0, newWidth, newHeight);
-                
-                const dataUrl = canvas.toDataURL('image/jpeg');
-                updateProcessedPreview(dataUrl, newWidth, newHeight);
-                isPdfResult = false;
-                
-                showMessage('Image resized successfully', 'success');
-                
-            } catch (error) {
-                showMessage('Error resizing image: ' + error.message, 'error');
-            }
-        }
-
-        // Convert format
-        function convertFormat() {
-            if (!originalImage) {
-                showMessage('Please load an image first', 'error');
+            if (scaleProvided && (isNaN(scale) || scale <= 0)) {
+                showMessage('Please enter a valid scale percentage', 'error');
                 return;
             }
 
-            const targetFormat = formatSelect.value;
-            
             try {
-                // If PDF, we handle differently
+                // Step 1: base size from width/height inputs
+                let finalWidth = width;
+                let finalHeight = height;
+
+                // Step 2: apply scale percentage on top of the base size, if provided
+                if (scaleProvided) {
+                    finalWidth = Math.round(width * (scale / 100));
+                    finalHeight = Math.round(height * (scale / 100));
+                }
+
+                finalWidth = Math.max(1, finalWidth);
+                finalHeight = Math.max(1, finalHeight);
+
+                const canvas = document.createElement('canvas');
+                canvas.width = finalWidth;
+                canvas.height = finalHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(originalImage, 0, 0, finalWidth, finalHeight);
+
+                // Step 3: target format
                 if (targetFormat === 'pdf') {
                     if (!window.jspdf) {
-                        showMessage('PDF Library not loaded. Check internet connection.', 'error');
+                        showMessage('PDF library not loaded. Check internet connection.', 'error');
                         return;
                     }
-                    // For PDF, we just signal that the next download will be PDF
-                    // But to show a preview, we show the image as JPEG
+
                     isPdfResult = true;
-                    
-                    // Create a visual preview (just the image itself)
-                    const canvas = document.createElement('canvas');
-                    canvas.width = originalImage.width;
-                    canvas.height = originalImage.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(originalImage, 0, 0);
-                    
-                    const previewDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-                    
-                    processedPreview.src = previewDataUrl;
+                    pdfImageData = canvas.toDataURL('image/jpeg', 0.95);
+                    pdfWidth = finalWidth;
+                    pdfHeight = finalHeight;
+
+                    processedPreview.src = pdfImageData;
                     processedPreview.style.display = 'block';
                     document.querySelector('#processedPreview + .placeholder-text').style.display = 'none';
-                    
-                    processedSize.textContent = "PDF Ready";
-                    processedResolution.textContent = `${originalImage.width} × ${originalImage.height}px`;
+
+                    processedSize.textContent = 'PDF Ready';
+                    processedResolution.textContent = `${finalWidth} × ${finalHeight}px`;
                     downloadBtn.disabled = false;
-                    
+
                     showMessage('Ready to generate PDF. Click Download.', 'success');
                     return;
                 }
 
-                // Standard Image Conversion
                 isPdfResult = false;
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = originalImage.width;
-                canvas.height = originalImage.height;
-                ctx.drawImage(originalImage, 0, 0);
-                
-                let dataUrl;
-                switch (targetFormat) {
-                    case 'jpg':
-                    case 'jpeg':
-                        dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-                        break;
-                    case 'png':
-                        dataUrl = canvas.toDataURL('image/png');
-                        break;
-                    default:
-                        dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-                }
-                
-                updateProcessedPreview(dataUrl, originalImage.width, originalImage.height);
-                showMessage(`Format converted to ${targetFormat.toUpperCase()} successfully`, 'success');
-                
+                let mime = 'image/jpeg';
+                if (targetFormat === 'png') mime = 'image/png';
+
+                const dataUrl = mime === 'image/jpeg'
+                    ? canvas.toDataURL(mime, 0.9)
+                    : canvas.toDataURL(mime);
+
+                updateProcessedPreview(dataUrl, finalWidth, finalHeight, mime);
+                showMessage(`Resized to ${finalWidth} × ${finalHeight}px and converted to ${targetFormat.toUpperCase()}`, 'success');
+
             } catch (error) {
-                showMessage('Error converting format: ' + error.message, 'error');
+                showMessage('Error processing image: ' + error.message, 'error');
             }
         }
 
-        function updateProcessedPreview(dataUrl, w, h) {
+        function updateProcessedPreview(dataUrl, w, h, mime) {
             processedPreview.src = dataUrl;
             processedPreview.style.display = 'block';
             document.querySelector('#processedPreview + .placeholder-text').style.display = 'none';
-            
-            // Calculate approximate size
-            const head = 'data:image/jpeg;base64,';
-            const size = Math.round((dataUrl.length - head.length) * 3 / 4);
-            
+
+            // Calculate approximate size using the correct header for the actual mime type
+            const header = `data:${mime};base64,`;
+            const size = Math.round((dataUrl.length - header.length) * 3 / 4);
+
             processedSize.textContent = `${(size / 1024).toFixed(2)} KB`;
             processedResolution.textContent = `${w} × ${h}px`;
-            
+
             processedImageData = dataUrl;
             downloadBtn.disabled = false;
         }
@@ -773,36 +750,23 @@
         // Download processed image
         function downloadImage() {
             if (isPdfResult) {
-                // Generate and download PDF
+                // Generate and download PDF using the exact image/dimensions already processed
                 try {
                     const { jsPDF } = window.jspdf;
-                    
-                    // Create canvas to get image data
-                    const canvas = document.createElement('canvas');
-                    // Use currently set dimensions or original
-                    const w = parseInt(widthInput.value) || originalImage.width;
-                    const h = parseInt(heightInput.value) || originalImage.height;
-                    
-                    canvas.width = w;
-                    canvas.height = h;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(originalImage, 0, 0, w, h);
-                    const imgData = canvas.toDataURL('image/jpeg', 1.0);
 
-                    // Create PDF matching image orientation
-                    const orientation = w > h ? 'l' : 'p';
+                    const orientation = pdfWidth > pdfHeight ? 'l' : 'p';
                     const pdf = new jsPDF({
                         orientation: orientation,
                         unit: 'px',
-                        format: [w, h] // Custom format matching image size
+                        format: [pdfWidth, pdfHeight] // Custom format matching processed image size
                     });
 
-                    pdf.addImage(imgData, 'JPEG', 0, 0, w, h);
-                    
+                    pdf.addImage(pdfImageData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+
                     const originalName = fileInput.files[0]?.name || 'image';
-                    const nameWithoutExt = originalName.split('.').slice(0, -1).join('.');
+                    const nameWithoutExt = originalName.split('.').slice(0, -1).join('.') || 'image';
                     pdf.save(`${nameWithoutExt}.pdf`);
-                    
+
                     showMessage('PDF Downloaded!', 'success');
                 } catch (e) {
                     showMessage('PDF Generation Failed: ' + e.message, 'error');
@@ -818,17 +782,17 @@
             try {
                 const link = document.createElement('a');
                 link.href = processedImageData;
-                
+
                 const originalName = fileInput.files[0]?.name || 'image';
-                const nameWithoutExt = originalName.split('.').slice(0, -1).join('.');
-                const extension = formatSelect.value === 'pdf' ? 'jpg' : (formatSelect.value || 'jpg'); // Fallback if stuck
-                
+                const nameWithoutExt = originalName.split('.').slice(0, -1).join('.') || 'image';
+                const extension = formatSelect.value === 'jpeg' ? 'jpg' : formatSelect.value;
+
                 link.download = `${nameWithoutExt}_processed.${extension}`;
-                
+
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                
+
                 showMessage('Download started', 'success');
             } catch (error) {
                 showMessage('Error downloading image: ' + error.message, 'error');
@@ -843,6 +807,9 @@
             downloadBtn.disabled = true;
             processedImageData = null;
             isPdfResult = false;
+            pdfImageData = null;
+            pdfWidth = 0;
+            pdfHeight = 0;
         }
 
         function showMessage(text, type) {
