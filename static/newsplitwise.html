@@ -402,12 +402,204 @@ input::placeholder{color:#B4B8AF}
 /* ================= state & storage ================= */
 const KEY = 'splitlite_v1';
 const state = { trip:'My Trip', members:[], expenses:[] };
-try{ const raw = localStorage.getItem(KEY); if(raw) Object.assign(state, JSON.parse(raw)); }catch(e){}
-const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} };
+
+function generateId(){
+  if(typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'){
+    try{ return crypto.randomUUID(); }catch(e){}
+  }
+  return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 11);
+}
+
+function normalizeState(data, strict = false){
+  const fallback = { trip:'My Trip', members:[], expenses:[] };
+  if(!data || typeof data !== 'object' || Array.isArray(data)){
+    return strict ? null : fallback;
+  }
+
+  let trip = 'My Trip';
+  if(data.trip !== undefined && data.trip !== null){
+    try{
+      const s = String(data.trip).trim();
+      if(s) trip = s;
+    }catch(e){}
+  }
+
+  const members = [];
+  const memberSet = new Set();
+  const memberLookup = new Map();
+  if(Array.isArray(data.members)){
+    for(const m of data.members){
+      if(m === undefined || m === null) {
+        if(strict) return null;
+        continue;
+      }
+      const str = String(m).trim();
+      if(!str) {
+        if(strict) return null;
+        continue;
+      }
+      const lower = str.toLowerCase();
+      if(!memberSet.has(lower)){
+        memberSet.add(lower);
+        members.push(str);
+        memberLookup.set(lower, str);
+      } else if(strict){
+        return null;
+      }
+    }
+  } else if(strict){
+    return null;
+  }
+
+  const expenses = [];
+  const seenIds = new Set();
+  if(Array.isArray(data.expenses)){
+    for(const e of data.expenses){
+      if(!e || typeof e !== 'object' || Array.isArray(e)){
+        if(strict) return null;
+        continue;
+      }
+
+      if(typeof e.amount !== 'number' || !Number.isFinite(e.amount)){
+        if(strict) return null;
+        continue;
+      }
+      const amount = Math.round(e.amount * 100) / 100;
+      if(amount <= 0){
+        if(strict) return null;
+        continue;
+      }
+
+      if(typeof e.payer !== 'string' && typeof e.payer !== 'number'){
+        if(strict) return null;
+        continue;
+      }
+      const payerStr = String(e.payer).trim();
+      if(!payerStr){
+        if(strict) return null;
+        continue;
+      }
+      const canonicalPayer = memberLookup.get(payerStr.toLowerCase());
+      if(!canonicalPayer){
+        if(strict) return null;
+        continue;
+      }
+
+      if(!Array.isArray(e.people)){
+        if(strict) return null;
+        continue;
+      }
+      const validPeople = [];
+      const seenPeople = new Set();
+      for(const p of e.people){
+        if(p === undefined || p === null){
+          if(strict) return null;
+          continue;
+        }
+        const pStr = String(p).trim();
+        if(!pStr){
+          if(strict) return null;
+          continue;
+        }
+        const canonicalP = memberLookup.get(pStr.toLowerCase());
+        if(!canonicalP){
+          if(strict) return null;
+          continue;
+        }
+        if(!seenPeople.has(canonicalP)){
+          seenPeople.add(canonicalP);
+          validPeople.push(canonicalP);
+        } else if(strict){
+          return null;
+        }
+      }
+      if(!validPeople.length){
+        if(strict) return null;
+        continue;
+      }
+
+      const note = typeof e.note === 'string' ? e.note : (e.note != null ? String(e.note) : '');
+
+      let date;
+      if(e.date === undefined || e.date === null || e.date === ''){
+        date = new Date().toISOString();
+      }else{
+        const d = new Date(e.date);
+        if(isNaN(d.getTime())){
+          if(strict) return null;
+          continue;
+        }
+        date = d.toISOString();
+      }
+
+      let id = (typeof e.id === 'string' || typeof e.id === 'number') ? String(e.id).trim() : '';
+      if(!id || seenIds.has(id)){
+        id = generateId();
+        while(seenIds.has(id)){
+          id = generateId();
+        }
+      }
+      seenIds.add(id);
+
+      expenses.push({
+        id,
+        note,
+        amount,
+        payer: canonicalPayer,
+        people: validPeople,
+        date
+      });
+    }
+  } else if(strict){
+    return null;
+  }
+
+  expenses.sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  return { trip, members, expenses };
+}
+
+let stateEpoch = 0;
+try{
+  const raw = localStorage.getItem(KEY);
+  if(raw){
+    const parsed = JSON.parse(raw);
+    const norm = normalizeState(parsed);
+    state.trip = norm.trip;
+    state.members = norm.members;
+    state.expenses = norm.expenses;
+  }
+}catch(e){
+  state.trip = 'My Trip';
+  state.members = [];
+  state.expenses = [];
+}
+let prevSavedTrip = state.trip || 'My Trip';
+const save = () => {
+  try{
+    localStorage.setItem(KEY, JSON.stringify(state));
+    return true;
+  }catch(e){
+    toast('Unable to save changes to storage');
+    return false;
+  }
+};
 
 /* ================= helpers ================= */
 const $ = s => document.querySelector(s);
 const money = n => '₹' + (Math.round(n*100)/100).toLocaleString('en-IN',{maximumFractionDigits:2});
+
+function getPaiseShares(amount, count){
+  const totalPaise = Math.round(amount * 100);
+  if(!count) return [];
+  const baseShare = Math.floor(totalPaise / count);
+  const remainder = totalPaise % count;
+  const shares = [];
+  for(let i = 0; i < count; i++){
+    shares.push(baseShare + (i < remainder ? 1 : 0));
+  }
+  return shares;
+}
 
 const AVA = ['#F59E4C','#5B9DF7','#E2554B','#9B6EF3','#19B99B','#EE6FB6','#E8B830','#5C7CFA'];
 function colorFor(name){ let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))>>>0; return AVA[h%AVA.length]; }
@@ -478,19 +670,26 @@ scrim.addEventListener('click', closeSheet);
 document.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click', closeSheet));
 
 document.querySelectorAll('.sheet-grab').forEach(h=>{
-  const sheet=h.closest('.sheet'); let y0=null;
-  h.addEventListener('pointerdown', e=>{ y0=e.clientY; sheet.style.transition='none'; h.setPointerCapture(e.pointerId); });
+  const sheet=h.closest('.sheet'); let y0=null, currentDy=0, rafId=null;
+  h.addEventListener('pointerdown', e=>{ y0=e.clientY; currentDy=0; sheet.style.transition='none'; h.setPointerCapture(e.pointerId); });
   h.addEventListener('pointermove', e=>{
     if(y0===null) return;
-    sheet.style.transform=`translateY(${Math.min(420, Math.max(0, e.clientY-y0))}px)`;
+    const rawDy = e.clientY - y0;
+    currentDy = rawDy <= 4 ? 0 : Math.min(420, rawDy);
+    if(!rafId){
+      rafId = requestAnimationFrame(()=>{
+        if(y0!==null) sheet.style.transform = `translateY(${currentDy}px)`;
+        rafId = null;
+      });
+    }
   });
   ['pointerup','pointercancel'].forEach(ev=>h.addEventListener(ev, ()=>{
     if(y0===null) return;
-    const m=(sheet.style.transform||'').match(/translateY\(([\d.]+)px\)/);
-    const dy=m?parseFloat(m[1]):0;
+    if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+    const dy = currentDy;
     sheet.style.transition=''; sheet.style.transform='';
     if(dy>90) closeSheet();
-    y0=null;
+    y0=null; currentDy=0;
   }));
 });
 
@@ -516,8 +715,13 @@ function addPerson(){
   if(state.members.some(m=>m.toLowerCase()===name.toLowerCase())){
     toast(name+' is already in'); personIn.value=''; return;
   }
-  state.members.push(name); personIn.value='';
-  save(); renderAll(); renderPeople();
+  state.members.push(name);
+  if(!save()){
+    state.members.pop();
+    return;
+  }
+  personIn.value='';
+  renderAll(); renderPeople();
   toast(name+' added');
   personIn.focus();
 }
@@ -551,16 +755,35 @@ function renderPeople(){
 }
 
 function removeMember(name){
-  state.members=state.members.filter(m=>m!==name);
-  let dropped=0;
-  state.expenses.forEach(e=>{
-    e.people=e.people.filter(p=>p!==name);
-    if(e.payer===name) e.payer=e.people[0]||state.members[0]||'';
-    if(!e.people.length){ dropped++; e._drop=true; }
+  const hasPaid = state.expenses.some(e => e.payer === name || e.payer.toLowerCase() === name.toLowerCase());
+  if(hasPaid){
+    toast(`Can't remove ${name} — edit or delete bills they paid first`);
+    return;
+  }
+  const prevMembers = [...state.members];
+  const prevExpenses = state.expenses.map(e => ({ ...e, people: [...e.people] }));
+  const nextMembers = state.members.filter(m => m !== name);
+  let dropped = 0;
+  const nextExpenses = [];
+  state.expenses.forEach(e => {
+    const updatedPeople = e.people.filter(p => p !== name);
+    if(!updatedPeople.length){
+      dropped++;
+    } else {
+      nextExpenses.push({ ...e, people: updatedPeople });
+    }
   });
-  state.expenses=state.expenses.filter(e=>!e._drop);
-  save(); renderAll(); renderPeople();
-  toast(name+' removed'+(dropped?` · ${dropped} bill${dropped>1?'s':''} dropped`:''));
+  stateEpoch++;
+  state.members = nextMembers;
+  state.expenses = nextExpenses;
+  if(!save()){
+    state.members = prevMembers;
+    state.expenses = prevExpenses;
+    stateEpoch++;
+    return;
+  }
+  renderAll(); renderPeople();
+  toast(name + ' removed' + (dropped ? ` · ${dropped} bill${dropped>1?'s':''} dropped` : ''));
 }
 
 /* ================= add / edit expense: amount, chips ================= */
@@ -587,9 +810,8 @@ function prepareEdit(e){
   saveBtn.textContent='Save changes';
   amtStr=String(e.amount);
   noteIn.value=e.note||'';
-  draftPayer=state.members.includes(e.payer) ? e.payer : state.members[0];
-  draftSplit=new Set(e.people.filter(p=>state.members.includes(p)));
-  if(!draftSplit.size) draftSplit=new Set(state.members);
+  draftPayer=e.payer;
+  draftSplit=new Set(e.people);
   renderAmt(); renderChips(); updatePerHead();
 }
 
@@ -635,13 +857,18 @@ function renderAmt(){
 function updatePerHead(){
   const amt=parseFloat(amtStr)||0, n=draftSplit.size;
   if(amt>0 && n>0){
-    perHead.textContent=`${money(amt)} ÷ ${n} = ${money(amt/n)} each`;
+    const shares=getPaiseShares(amt, n);
+    const text = (shares.length && shares.every(s => s === shares[0]))
+      ? `${money((shares[0]||0)/100)} each`
+      : `${shares.map(s => money(s/100)).join(' / ')} each`;
+    perHead.textContent=`${money(amt)} ÷ ${n} = ${text}`;
     perHead.classList.add('show');
   } else perHead.classList.remove('show');
 }
 
 /* physical keyboard support while the sheet is open */
 document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){ closeSheet(); return; }
   if(sheetOpen===sheetAdd){
     if(document.activeElement===noteIn){
       if(e.key==='Enter'){ e.preventDefault(); saveExpense(); }
@@ -652,36 +879,64 @@ document.addEventListener('keydown', e=>{
     else if(e.key==='Backspace') amtKey('back');
     else if(e.key==='Enter') saveExpense();
   }
-  if(e.key==='Escape') closeSheet();
 });
 
  $('#saveBtn').addEventListener('click', saveExpense);
 function saveExpense(){
-  const amount=Math.round((parseFloat(amtStr)||0)*100)/100;
-  if(!(amount>0)){
+  const num=parseFloat(amtStr);
+  const amount=Math.round((num||0)*100)/100;
+  if(!Number.isFinite(num) || !(amount>0)){
     amtShow.classList.remove('shake'); void amtShow.offsetWidth; amtShow.classList.add('shake');
     toast('Enter an amount first'); return;
   }
-  if(!draftSplit.size){ toast('Pick who it\u2019s for'); return; }
+  const canonicalPayer=state.members.find(m=>m===draftPayer) || state.members.find(m=>m.toLowerCase()===(draftPayer||'').toLowerCase());
+  if(!canonicalPayer){ toast('Select a valid payer'); return; }
+
+  const validSplit=[];
+  const seenSplit=new Set();
+  draftSplit.forEach(p=>{
+    const canonical=state.members.find(m=>m===p) || state.members.find(m=>m.toLowerCase()===(p||'').toLowerCase());
+    if(canonical && !seenSplit.has(canonical)){
+      seenSplit.add(canonical);
+      validSplit.push(canonical);
+    }
+  });
+  if(!validSplit.length){ toast('Pick who it\u2019s for'); return; }
+
   const note=noteIn.value.trim();
 
   if(editingId){
     const i=state.expenses.findIndex(x=>x.id===editingId);
     if(i>-1){
       const e=state.expenses[i];
-      e.note=note; e.amount=amount; e.payer=draftPayer; e.people=[...draftSplit];
-      save(); closeSheet(); renderAll();
+      const prevE={ note:e.note, amount:e.amount, payer:e.payer, people:[...e.people] };
+      e.note=note; e.amount=amount; e.payer=canonicalPayer; e.people=validSplit;
+      if(!save()){
+        Object.assign(e, prevE);
+        return;
+      }
+      closeSheet(); renderAll();
       toast(`Updated ${money(amount)}${note?' · '+note:''}`);
       return;
     }
   }
 
-  state.expenses.unshift({
-    id: Date.now()+''+Math.floor(Math.random()*1e4),
-    note, amount, payer:draftPayer, people:[...draftSplit],
+  let newId=generateId();
+  while(state.expenses.some(x=>x.id===newId)){
+    newId=generateId();
+  }
+
+  const newExpense = {
+    id: newId,
+    note, amount, payer:canonicalPayer, people:validSplit,
     date:new Date().toISOString()
-  });
-  save(); closeSheet(); renderAll();
+  };
+  state.expenses.unshift(newExpense);
+  if(!save()){
+    state.expenses.shift();
+    return;
+  }
+  closeSheet(); renderAll();
   toast(`Added ${money(amount)}${note?' · '+note:''}`);
 }
 
@@ -697,10 +952,16 @@ function exportCsv(){
   if(!state.expenses.length){ toast('No bills to export yet'); return; }
   const rows=[['Paid by','For','Amount','Split between','Per head','Date']];
   state.expenses.forEach(e=>{
+    const d=new Date(e.date);
+    const dateStr=isNaN(d.getTime())?'':d.toLocaleDateString();
+    const shares=getPaiseShares(e.amount, e.people.length);
+    const perHeadCsv = (shares.length && shares.every(s => s === shares[0]))
+      ? ((shares[0]||0)/100).toFixed(2)
+      : shares.map(s => (s/100).toFixed(2)).join(' / ');
     rows.push([
       e.payer, e.note||'Payment', e.amount.toFixed(2),
-      e.people.join(' | '), (e.amount/e.people.length).toFixed(2),
-      new Date(e.date).toLocaleDateString()
+      e.people.join(' | '), perHeadCsv,
+      dateStr
     ]);
   });
   const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
@@ -724,20 +985,24 @@ restoreInput.addEventListener('change', ()=>{
   r.onload=()=>{
     try{
       const d=JSON.parse(r.result);
-      if(!Array.isArray(d.members) || !Array.isArray(d.expenses)) throw 0;
-      state.trip=String(d.trip||'My Trip');
-      state.members=[...new Set(d.members.map(m=>String(m).trim()).filter(Boolean))];
-      state.expenses=d.expenses
-        .filter(e=>e && typeof e.amount==='number' && Array.isArray(e.people) && e.people.length)
-        .map(e=>({
-          id:String(e.id||Date.now()+''+Math.floor(Math.random()*1e4)),
-          note:String(e.note||''),
-          amount:Math.round(e.amount*100)/100,
-          payer:String(e.payer||e.people[0]||''),
-          people:e.people.map(String),
-          date:String(e.date||new Date().toISOString())
-        }));
-      save();
+      if(!d || typeof d !== 'object' || Array.isArray(d) || !Array.isArray(d.members) || !Array.isArray(d.expenses)) throw 0;
+      const norm=normalizeState(d, true);
+      if(!norm) throw 0;
+      const prevTrip=state.trip;
+      const prevMembers=[...state.members];
+      const prevExpenses=state.expenses.map(e=>({...e, people:[...e.people]}));
+      stateEpoch++;
+      state.trip=norm.trip;
+      state.members=norm.members;
+      state.expenses=norm.expenses;
+      if(!save()){
+        state.trip=prevTrip;
+        state.members=prevMembers;
+        state.expenses=prevExpenses;
+        stateEpoch++;
+        return;
+      }
+      prevSavedTrip=state.trip;
       tripEl.textContent=state.trip;
       renderAll(); renderPeople();
       toast('Backup restored ✓');
@@ -763,39 +1028,55 @@ clearBtn.addEventListener('click', ()=>{
     return;
   }
   disarmClear();
+  const prevTrip=state.trip;
+  const prevMembers=[...state.members];
+  const prevExpenses=state.expenses.map(e=>({...e, people:[...e.people]}));
+  stateEpoch++;
   state.trip='My Trip'; state.members=[]; state.expenses=[];
-  try{ localStorage.removeItem(KEY); }catch(e){}
-  save();
+  if(!save()){
+    state.trip=prevTrip;
+    state.members=prevMembers;
+    state.expenses=prevExpenses;
+    stateEpoch++;
+    return;
+  }
+  prevSavedTrip=state.trip;
   tripEl.textContent=state.trip;
   closeSheet(); renderAll(); renderPeople();
   toast('All data cleared');
 });
 
 /* ================= money math ================= */
-function computeBalances(){
+function computeBalancesPaise(){
   const bal={};
   state.members.forEach(m=>bal[m]=0);
   state.expenses.forEach(e=>{
-    const share=e.amount/(e.people.length||1);
-    e.people.forEach(p=>bal[p]=(bal[p]||0)-share);
-    bal[e.payer]=(bal[e.payer]||0)+e.amount;
+    const shares=getPaiseShares(e.amount, e.people.length);
+    shares.forEach((share, i)=>{
+      bal[e.people[i]]=(bal[e.people[i]]||0)-share;
+    });
+    bal[e.payer]=(bal[e.payer]||0)+Math.round(e.amount*100);
   });
-  for(const k in bal) bal[k]=Math.round(bal[k]*100)/100;
   return bal;
 }
+function computeBalances(){
+  return computeBalancesPaise();
+}
 function computeSettlements(){
-  const bal=computeBalances(), cred=[], debt=[];
+  const bal=computeBalancesPaise(), cred=[], debt=[];
   Object.entries(bal).forEach(([n,v])=>{
-    if(v>0.005) cred.push({n,v}); else if(v<-0.005) debt.push({n, v:-v});
+    if(v>0) cred.push({n, v}); else if(v<0) debt.push({n, v:-v});
   });
   cred.sort((a,b)=>b.v-a.v); debt.sort((a,b)=>b.v-a.v);
   const out=[]; let i=0,j=0;
   while(i<debt.length && j<cred.length){
     const pay=Math.min(debt[i].v, cred[j].v);
-    out.push({from:debt[i].n, to:cred[j].n, amount:Math.round(pay*100)/100});
-    debt[i].v-=pay; cred[j].v-=pay;
-    if(debt[i].v<=0.005) i++;
-    if(cred[j].v<=0.005) j++;
+    if(pay>0){
+      out.push({from:debt[i].n, to:cred[j].n, amount:pay/100});
+      debt[i].v-=pay; cred[j].v-=pay;
+    }
+    if(debt[i].v===0) i++;
+    if(cred[j].v===0) j++;
   }
   return out;
 }
@@ -803,12 +1084,18 @@ function computeSettlements(){
 /* ================= renderers ================= */
 function animateNumber(el, to){
   const from=Number(el.dataset.v||0); el.dataset.v=to;
+  const token=(Number(el.dataset.animToken||0)+1); el.dataset.animToken=token;
   if(from===to){ el.textContent=money(to); return; }
   const t0=performance.now(), dur=500;
   (function step(t){
+    if(Number(el.dataset.animToken)!==token) return;
     const p=Math.min(1,(t-t0)/dur), e=1-Math.pow(1-p,3);
-    el.textContent=money(from+(to-from)*e);
-    if(p<1) requestAnimationFrame(step);
+    if(p>=1){
+      el.textContent=money(to);
+    }else{
+      el.textContent=money(from+(to-from)*e);
+      requestAnimationFrame(step);
+    }
   })(t0);
 }
 
@@ -825,19 +1112,19 @@ function renderCrew(){
   crewRow.appendChild(add);
 }
 
-function balRow(m, v, maxAbs){
+function balRow(m, vPaise, maxAbs){
   const row=document.createElement('div'); row.className='b-row';
   row.appendChild(avatar(m));
   const mid=document.createElement('div'); mid.className='b-mid';
   const nm=document.createElement('span'); nm.className='b-name'; nm.textContent=m;
   const track=document.createElement('div'); track.className='b-track';
   const fill=document.createElement('i');
-  fill.style.width=Math.min(100, Math.abs(v)/maxAbs*100)+'%';
-  fill.style.background = v>0.005 ? 'var(--green)' : v<-0.005 ? 'var(--red)' : 'transparent';
+  fill.style.width=Math.min(100, Math.abs(vPaise)/maxAbs*100)+'%';
+  fill.style.background = vPaise>0 ? 'var(--green)' : vPaise<0 ? 'var(--red)' : 'transparent';
   track.appendChild(fill); mid.append(nm,track); row.appendChild(mid);
   const badge=document.createElement('span');
-  if(v>0.005){ badge.className='b-badge gets'; badge.textContent='gets '+money(v); }
-  else if(v<-0.005){ badge.className='b-badge owes'; badge.textContent='owes '+money(-v); }
+  if(vPaise>0){ badge.className='b-badge gets'; badge.textContent='gets '+money(vPaise/100); }
+  else if(vPaise<0){ badge.className='b-badge owes'; badge.textContent='owes '+money(-vPaise/100); }
   else { badge.className='b-badge even'; badge.textContent='settled'; }
   row.appendChild(badge);
   return row;
@@ -857,14 +1144,21 @@ function settleRow(t){
 }
 
 function dateLabel(d){
+  if(!d || isNaN(d.getTime())) return '';
   const t=new Date(), y=new Date(Date.now()-864e5);
   if(d.toDateString()===t.toDateString()) return 'Today';
   if(d.toDateString()===y.toDateString()) return 'Yesterday';
   return d.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
 }
 
+function getExpenseSig(e){
+  return `${e.id}|${e.amount}|${e.payer}|${e.note||''}|${e.date}|${(e.people||[]).join(',')}`;
+}
+
 function billRow(e){
   const card=document.createElement('div'); card.className='bill';
+  card.dataset.renderKey='b:'+e.id;
+  card.dataset.sig=getExpenseSig(e);
   const head=document.createElement('button'); head.type='button'; head.className='bill-head';
 
   const ic=document.createElement('div'); ic.className='bill-ic';
@@ -887,7 +1181,10 @@ function billRow(e){
   const inEl=document.createElement('div'); inEl.className='bill-det-in';
   const pad=document.createElement('div'); pad.className='bill-pad';
   const split=document.createElement('div'); split.className='bill-split';
-  split.textContent=`${money(e.amount/e.people.length)} each`;
+  const shares=getPaiseShares(e.amount, e.people.length);
+  split.textContent = (shares.length && shares.every(s => s === shares[0]))
+    ? `${money((shares[0]||0)/100)} each`
+    : `${shares.map(s => money(s/100)).join(' / ')} each`;
   const who=document.createElement('div'); who.className='bill-who';
   e.people.forEach(p=>{
     const tag=document.createElement('span'); tag.className='who-tag';
@@ -914,15 +1211,114 @@ function billRow(e){
 function deleteExpense(e){
   const idx=state.expenses.findIndex(x=>x.id===e.id);
   if(idx<0) return;
+  const capturedEpoch=stateEpoch;
   const [removed]=state.expenses.splice(idx,1);
-  save(); renderAll();
+  if(!save()){
+    state.expenses.splice(idx,0,removed);
+    return;
+  }
+  renderAll();
   toast(`Deleted "${removed.note||'payment'}"`, 'Undo', ()=>{
-    state.expenses.splice(idx,0,removed); save(); renderAll();
+    if(stateEpoch!==capturedEpoch){
+      toast('Cannot undo: state has changed');
+      return;
+    }
+    if(state.expenses.some(x=>x.id===removed.id)) return;
+    if(!state.members.includes(removed.payer) || !removed.people.every(p=>state.members.includes(p))){
+      toast('Cannot undo: members involved are no longer present');
+      return;
+    }
+    const insertIdx=state.expenses.findIndex(x=>new Date(x.date)<=new Date(removed.date));
+    if(insertIdx===-1){
+      state.expenses.push(removed);
+    } else {
+      state.expenses.splice(insertIdx,0,removed);
+    }
+    if(!save()){
+      const rollIdx=state.expenses.findIndex(x=>x.id===removed.id);
+      if(rollIdx>=0) state.expenses.splice(rollIdx,1);
+      return;
+    }
+    renderAll();
+    toast(`Restored "${removed.note||'payment'}"`);
   });
 }
 
+function renderBills(){
+  billsEmpty.classList.toggle('hidden', state.expenses.length>0);
+  if(!state.expenses.length){
+    billsList.innerHTML='';
+    return;
+  }
+
+  const desired=[];
+  let lastLabel='';
+  for(const e of state.expenses){
+    const d=new Date(e.date);
+    const label=isNaN(d.getTime()) ? '' : dateLabel(d);
+    if(label && label!==lastLabel){
+      lastLabel=label;
+      desired.push({ type:'header', key:'h:'+label, label });
+    }
+    desired.push({
+      type:'bill',
+      key:'b:'+e.id,
+      expense:e,
+      sig:getExpenseSig(e)
+    });
+  }
+
+  const existingMap=new Map();
+  for(const child of Array.from(billsList.children)){
+    const key=child.dataset ? child.dataset.renderKey : null;
+    if(key){
+      existingMap.set(key, child);
+    } else {
+      child.remove();
+    }
+  }
+
+  desired.forEach((item, index)=>{
+    let el=existingMap.get(item.key);
+    if(item.type==='header'){
+      if(el){
+        existingMap.delete(item.key);
+        if(el.textContent!==item.label) el.textContent=item.label;
+      } else {
+        el=document.createElement('div');
+        el.className='date-h';
+        el.textContent=item.label;
+        el.dataset.renderKey=item.key;
+      }
+    } else {
+      if(el){
+        existingMap.delete(item.key);
+        if(el.dataset.sig!==item.sig){
+          const isOpen=el.classList.contains('open');
+          const newEl=billRow(item.expense);
+          if(isOpen) newEl.classList.add('open');
+          el.replaceWith(newEl);
+          el=newEl;
+        }
+      } else {
+        el=billRow(item.expense);
+      }
+    }
+
+    const currentAtPos=billsList.children[index];
+    if(currentAtPos!==el){
+      billsList.insertBefore(el, currentAtPos||null);
+    }
+  });
+
+  for(const stale of existingMap.values()){
+    stale.remove();
+  }
+}
+
 function renderAll(){
-  const total=state.expenses.reduce((s,e)=>s+e.amount,0);
+  const totalPaise=state.expenses.reduce((s,e)=>s+Math.round(e.amount*100),0);
+  const total=totalPaise/100;
   animateNumber(heroTotal, total);
   heroSub.textContent=`${state.expenses.length} bill${state.expenses.length===1?'':'s'} · ${state.members.length} people`;
   renderCrew();
@@ -932,11 +1328,11 @@ function renderAll(){
   detailsWrap.classList.toggle('hidden', !hasMembers);
 
   if(hasMembers){
-    const bal=computeBalances();
-    const vals=Object.values(bal).filter(v=>Math.abs(v)>0.005).map(Math.abs);
+    const balPaise=computeBalancesPaise();
+    const vals=Object.values(balPaise).filter(v=>v!==0).map(Math.abs);
     const maxAbs=Math.max(...vals, 1);
     balList.innerHTML='';
-    state.members.forEach(m=>balList.appendChild(balRow(m, bal[m]||0, maxAbs)));
+    state.members.forEach(m=>balList.appendChild(balRow(m, balPaise[m]||0, maxAbs)));
 
     settleBox.innerHTML='';
     const s=computeSettlements();
@@ -947,29 +1343,55 @@ function renderAll(){
     } else s.forEach(t=>settleBox.appendChild(settleRow(t)));
   }
 
-  billsList.innerHTML='';
-  billsEmpty.classList.toggle('hidden', state.expenses.length>0);
-  let lastLabel='';
-  state.expenses.forEach(e=>{
-    const label=dateLabel(new Date(e.date));
-    if(label!==lastLabel){
-      lastLabel=label;
-      const h=document.createElement('div'); h.className='date-h'; h.textContent=label;
-      billsList.appendChild(h);
-    }
-    billsList.appendChild(billRow(e));
-  });
+  renderBills();
 }
 
 /* ================= trip name ================= */
 tripEl.textContent=state.trip||'';
+let tripSaveTimer=null;
+function flushTripSave(){
+  if(tripSaveTimer){
+    clearTimeout(tripSaveTimer);
+    tripSaveTimer=null;
+    const candidate=tripEl.textContent.replace(/\n/g,' ').trim();
+    if(candidate===prevSavedTrip) return;
+    state.trip=candidate;
+    if(!save()){
+      state.trip=prevSavedTrip;
+      tripEl.textContent=prevSavedTrip;
+    } else {
+      prevSavedTrip=state.trip;
+    }
+  }
+}
 tripEl.addEventListener('input', ()=>{
-  state.trip=tripEl.textContent.replace(/\n/g,' ').trim();
-  save();
+  clearTimeout(tripSaveTimer);
+  tripSaveTimer=setTimeout(()=>{
+    tripSaveTimer=null;
+    const candidate=tripEl.textContent.replace(/\n/g,' ').trim();
+    if(candidate===prevSavedTrip) return;
+    state.trip=candidate;
+    if(!save()){
+      state.trip=prevSavedTrip;
+      tripEl.textContent=prevSavedTrip;
+    } else {
+      prevSavedTrip=state.trip;
+    }
+  }, 300);
 });
 tripEl.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); tripEl.blur(); } });
 tripEl.addEventListener('blur', ()=>{
-  if(!tripEl.textContent.trim()){ state.trip='My Trip'; tripEl.textContent='My Trip'; save(); }
+  flushTripSave();
+  if(!tripEl.textContent.trim()){
+    state.trip='My Trip';
+    tripEl.textContent='My Trip';
+    if(!save()){
+      state.trip=prevSavedTrip;
+      tripEl.textContent=prevSavedTrip;
+    } else {
+      prevSavedTrip=state.trip;
+    }
+  }
 });
 
 /* ================= init ================= */
