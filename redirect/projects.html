@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>All Projects &amp; Tools — Prem Malik</title>
+  <meta name="description" content="Explore live web tools, utilities, desktop applications, and systems software built by Prem Malik.">
+  <link rel="icon" href="../image/favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <div class="page-wrapper">
+    <!-- Top Header -->
+    <header class="projects-page-header">
+      <div class="container-custom projects-header-inner">
+        <!-- Back to Home -->
+        <a href="../index.html" class="view-all-link" style="gap: 0.5rem; color: var(--text-muted);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          <span>Back to Home</span>
+        </a>
+
+        <!-- Brand Logo -->
+        <a href="../index.html" class="nav-brand">
+          <span>Mm</span><span class="brand-cursor animate-blink"></span>
+        </a>
+
+        <!-- GitHub Repos Button -->
+        <a href="https://github.com/PremMalik?tab=repositories" target="_blank" rel="noopener noreferrer" class="btn-secondary projects-header-btn">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+          <span>GitHub Repos</span>
+          <svg class="lucide-arrow-up-right" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content" style="padding-top: 3rem; padding-bottom: 4rem;">
+      <div class="container-custom">
+        <!-- Header Banner -->
+        <div style="margin-bottom: 2.5rem;">
+          <div class="section-eyebrow">
+            <span class="section-eyebrow-symbol">▬</span>
+            <span>ALL PROJECTS &amp; TOOLS</span>
+          </div>
+          <h1 class="section-title" style="margin-bottom: 1rem;">
+            Tools I've built and shipped.
+          </h1>
+          <p style="font-size: 1rem; color: var(--text-muted); max-width: 42rem; line-height: 1.625;">
+            Explore live web tools, utilities, desktop applications, and systems software built to solve real everyday problems.
+          </p>
+        </div>
+
+        <!-- Search & Filter Bar -->
+        <div class="search-filter-bar">
+          <!-- Search Input -->
+          <div class="search-input-wrapper">
+            <svg class="search-icon lucide-search" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="project-search-input" class="search-input" placeholder="Search by name, tag, or topic...">
+          </div>
+
+          <!-- Category Pills -->
+          <div class="category-pills">
+            <button type="button" class="category-pill active" data-category="All">All</button>
+            <button type="button" class="category-pill" data-category="Desktop &amp; Security">Desktop &amp; Security</button>
+            <button type="button" class="category-pill" data-category="Web Tool">Web Tool</button>
+            <button type="button" class="category-pill" data-category="Web App">Web App</button>
+            <button type="button" class="category-pill" data-category="Web App &amp; Finance">Web App &amp; Finance</button>
+            <button type="button" class="category-pill" data-category="Technology &amp; Systems">Technology &amp; Systems</button>
+          </div>
+        </div>
+
+        <!-- Projects Grid -->
+        <div class="projects-grid" id="projects-list">
+          <!-- 1. GreenBox -->
+          <a href="greenbox.html" target="_blank" rel="noopener noreferrer" class="project-card projects-grid-item"
+             data-category="Desktop &amp; Security" data-title="GreenBox"
+             data-desc="A secure file encryption tool with AES-256, HMAC and tamper protection. Built because I wanted something better than toy encryption tools."
+             data-tags="C++ Windows Security">
+            <div>
+              <div class="project-thumb-container" style="aspect-ratio: 284 / 99;">
+                <img src="../image/greenbox.webp" alt="GreenBox" loading="lazy">
+              </div>
+              <div class="project-card-title-row">
+                <h3 class="project-card-title">GreenBox</h3>
+                <span class="project-card-arrow">
+                  <svg class="lucide-external-link" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                </span>
+              </div>
+              <p class="project-card-desc">
+                A secure file encryption tool with AES-256, HMAC and tamper protection. Built because I wanted something better than toy encryption tools.
+              </p>
+            </div>
+            <div class="project-card-tags">
+              <span class="tag-badge">C++</span>
+              <span class="tag-badge">Windows</span>
+              <span class="tag-badge">Security</span>
+            </div>
+          </a>
+
+          <!-- 2. Markdown Preview -->
+          <a href="md-text.html" target="_blank" rel="noopener noreferrer" class="project-card projects-grid-item"
+             data-category="Web Tool" data-title="Markdown Preview"
+             data-desc="A browser-based Markdown editor with a live preview that turns raw Markdown into clean HTML and print-ready PDF documents."
+             data-tags="JavaScript Markdown Web Tool">
+            <div>
+              <div class="project-thumb-container" style="aspect-ratio: 284 / 99;">
+                <img src="../image/md-text.webp" alt="Markdown Preview" loading="lazy">
+              </div>
+              <div class="project-card-title-row">
+                <h3 class="project-card-title">Markdown Preview</h3>
+                <span class="project-card-arrow">
+                  <svg class="lucide-external-link" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                </span>
+              </div>
+              <p class="project-card-desc">
+                A browser-based Markdown editor with a live preview that turns raw Markdown into clean HTML and print-ready PDF documents.
+              </p>
+            </div>
+            <div class="project-card-tags">
+              <span class="tag-badge">JavaScript</span>
+              <span class="tag-badge">Markdown</span>
+              <span class="tag-badge">Web Tool</span>
+            </div>
+          </a>
+
+          <!-- 3. Image Converter -->
+          <a href="imgEditer.html" target="_blank" rel="noopener noreferrer" class="project-card projects-grid-item"
+             data-category="Web App" data-title="Image Converter"
+             data-desc="A browser-based image converter for resizing and converting JPG, JPEG, and PNG files into other image formats or PDF — entirely in the browser."
+             data-tags="JavaScript Canvas API Web App">
+            <div>
+              <div class="project-thumb-container" style="aspect-ratio: 284 / 99;">
+                <img src="../image/image-convert.webp" alt="Image Converter" loading="lazy">
+              </div>
+              <div class="project-card-title-row">
+                <h3 class="project-card-title">Image Converter</h3>
+                <span class="project-card-arrow">
+                  <svg class="lucide-external-link" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                </span>
+              </div>
+              <p class="project-card-desc">
+                A browser-based image converter for resizing and converting JPG, JPEG, and PNG files into other image formats or PDF — entirely in the browser.
+              </p>
+            </div>
+            <div class="project-card-tags">
+              <span class="tag-badge">JavaScript</span>
+              <span class="tag-badge">Canvas API</span>
+              <span class="tag-badge">Web App</span>
+            </div>
+          </a>
+
+          <!-- 4. Split-Bills — Mobile -->
+          <a href="splitwise-phone.html" target="_blank" rel="noopener noreferrer" class="project-card projects-grid-item"
+             data-category="Web App &amp; Finance" data-title="Split-Bills — Mobile"
+             data-desc="A mobile-friendly expense splitter for groups. Add people, record bills, and see who owes whom without needing an account or backend."
+             data-tags="JavaScript Local Storage Web App">
+            <div>
+              <div class="project-thumb-container" style="aspect-ratio: 284 / 99;">
+                <img src="../image/splitwise-phone.webp" alt="Split-Bills — Mobile" loading="lazy">
+              </div>
+              <div class="project-card-title-row">
+                <h3 class="project-card-title">Split-Bills — Mobile</h3>
+                <span class="project-card-arrow">
+                  <svg class="lucide-external-link" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                </span>
+              </div>
+              <p class="project-card-desc">
+                A mobile-friendly expense splitter for groups. Add people, record bills, and see who owes whom without needing an account or backend.
+              </p>
+            </div>
+            <div class="project-card-tags">
+              <span class="tag-badge">JavaScript</span>
+              <span class="tag-badge">Local Storage</span>
+              <span class="tag-badge">Web App</span>
+            </div>
+          </a>
+
+          <!-- 5. Split-Bills — Desktop -->
+          <a href="splitwise-desktop/index.html" target="_blank" rel="noopener noreferrer" class="project-card projects-grid-item"
+             data-category="Web App &amp; Finance" data-title="Split-Bills — Desktop"
+             data-desc="A desktop-style expense ledger for managing shared bills, tracking payments, viewing member balances, and settling group expenses."
+             data-tags="JavaScript Web App Expense Tracking">
+            <div>
+              <div class="project-thumb-container" style="aspect-ratio: 284 / 99;">
+                <img src="../image/splitwise-desktop.webp" alt="Split-Bills — Desktop" loading="lazy">
+              </div>
+              <div class="project-card-title-row">
+                <h3 class="project-card-title">Split-Bills — Desktop</h3>
+                <span class="project-card-arrow">
+                  <svg class="lucide-external-link" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                </span>
+              </div>
+              <p class="project-card-desc">
+                A desktop-style expense ledger for managing shared bills, tracking payments, viewing member balances, and settling group expenses.
+              </p>
+            </div>
+            <div class="project-card-tags">
+              <span class="tag-badge">JavaScript</span>
+              <span class="tag-badge">Web App</span>
+              <span class="tag-badge">Expense Tracking</span>
+            </div>
+          </a>
+
+          <!-- 6. Blogs of tech-Tips -->
+          <a href="https://github.com/PremMalik" target="_blank" rel="noopener noreferrer" class="project-card projects-grid-item"
+             data-category="Technology &amp; Systems" data-title="Blogs of tech-Tips"
+             data-desc="Practical notes about computers, software, phones, and everyday technology — focused on understanding how things work and using them properly."
+             data-tags="Systems Computers Technology">
+            <div>
+              <div class="project-thumb-container" style="aspect-ratio: 284 / 99;">
+                <img src="../image/Blogs_coming_soon.webp" alt="Blogs of tech-Tips" loading="lazy">
+              </div>
+              <div class="project-card-title-row">
+                <h3 class="project-card-title">Blogs of tech-Tips</h3>
+                <span class="project-card-arrow">
+                  <svg class="lucide-external-link" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                </span>
+              </div>
+              <p class="project-card-desc">
+                Practical notes about computers, software, phones, and everyday technology — focused on understanding how things work and using them properly.
+              </p>
+            </div>
+            <div class="project-card-tags">
+              <span class="tag-badge">Systems</span>
+              <span class="tag-badge">Computers</span>
+              <span class="tag-badge">Technology</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-search-state" class="empty-state" style="display: none;">
+          <p>No projects found matching your search.</p>
+          <button type="button" id="reset-filters-btn" style="margin-top: 0.75rem; background: none; border: none; font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-green); text-decoration: underline; cursor: pointer;">
+            Reset filters
+          </button>
+        </div>
+
+        <!-- GitHub CTA Banner -->
+        <div class="github-cta-banner">
+          <div>
+            <h3 style="font-size: 1rem; font-weight: 600; color: var(--text-white); margin-bottom: 0.25rem;">
+              Looking for more code &amp; experiments?
+            </h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted);">
+              Explore all open-source repositories and experimental code directly on GitHub.
+            </p>
+          </div>
+          <a href="https://github.com/PremMalik?tab=repositories" target="_blank" rel="noopener noreferrer" class="btn-primary github-banner-btn">
+            <span>View GitHub Repositories</span>
+            <svg class="lucide-arrow-up-right" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+          </a>
+        </div>
+      </div>
+    </main>
+
+    <!-- Site Footer -->
+    <footer class="site-footer">
+      <div class="container-custom footer-inner">
+        <!-- Brand & Motto -->
+        <div class="footer-brand">
+          <a href="../index.html" class="footer-domain">premmalik.in</a>
+          <span style="color: #3f3f46; user-select: none;">|</span>
+          <span>Build a more useful internet.</span>
+        </div>
+
+        <!-- Links & Back to Top -->
+        <div class="footer-actions">
+          <a href="https://github.com/PremMalik" target="_blank" rel="noopener noreferrer" class="footer-social-link" aria-label="Prem Malik GitHub">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+            </svg>
+          </a>
+          <a href="https://www.linkedin.com/in/prem-malik/" target="_blank" rel="noopener noreferrer" class="footer-social-link" aria-label="Prem Malik LinkedIn">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.64a1.64 1.64 0 1 0 .04 3.28 1.64 1.64 0 0 0-.04-3.28z"/>
+            </svg>
+          </a>
+          <a href="mailto:premjat098@gmail.com" class="footer-social-link" aria-label="Email Prem Malik">
+            <svg class="lucide-mail" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/>
+            </svg>
+          </a>
+
+          <!-- Go Up Page / Back to Top Button -->
+          <button id="scroll-top-btn" class="btn-top" aria-label="Scroll back to top" title="Go to top of page">
+            <svg class="lucide-arrow-up" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+            <span style="font-size: 11px;">Top</span>
+          </button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="../script.js"></script>
+</body>
+</html>
